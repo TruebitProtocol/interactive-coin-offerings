@@ -6,6 +6,12 @@ See [Majoolr's Crowdsale Repo](https://github.com/Majoolr/ethereum-libraries/tre
 
 ## Implementation Details
 
+Base crowdsale Logic: CrowdsaleLib.sol
+Interactive ICO-Specific Logic: InteractiveCrowdsaleLib.sol
+Contract that implements Library functions:  InteractiveCrowdsaleTestContract.sol
+
+We had to create copies for testing in testrpc, which are prefixed with Test for the libraries and Time for the contract to deal with timestamps.
+
 As you'll see, the valuations are stored in a sorted linked list, using LinkedListLib.sol for the implementation.  There is only one node in the linked list per personal valuation, so even if there are multiple bids at the same personal valuation, there will still be only one entry in the list.
 
 There is also a storage struct that maps addresses to their submitted valuation.  A valuation of zero shows that the address is inactive. Addresses only have inactive and active status
