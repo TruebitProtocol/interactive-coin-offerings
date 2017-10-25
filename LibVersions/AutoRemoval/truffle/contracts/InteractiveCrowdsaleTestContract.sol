@@ -2,7 +2,7 @@ pragma solidity ^0.4.15;
 
 /****************
 *
-*  Test contract for tesing libraries on networks
+*  Test contract for testing libraries on networks
 *
 *****************/
 
@@ -20,12 +20,12 @@ contract InteractiveCrowdsaleTestContract {
     uint256 fallbackExchangeRate,
     uint256 capAmountInCents,
     uint256 valuationGranularity,
-    uint256 endWithdrawlTime,
+    uint256 endWithdrawalTime,
     uint256 endTime,
     uint8 percentBurn,
     CrowdsaleToken token)
   {
-  	sale.init(owner, saleData, fallbackExchangeRate, capAmountInCents, valuationGranularity, endWithdrawlTime, endTime, percentBurn, token);
+  	sale.init(owner, saleData, fallbackExchangeRate, capAmountInCents, valuationGranularity, endWithdrawalTime, endTime, percentBurn, token);
   }
 
   // fallback function can be used to buy tokens
@@ -94,7 +94,7 @@ contract InteractiveCrowdsaleTestContract {
   }
 
   function getEndWithdrawlTime() constant returns (uint256) {
-    return sale.endWithdrawlTime;
+    return sale.endWithdrawalTime;
   }
 
   function getTotalValuation() constant returns (uint256) {
