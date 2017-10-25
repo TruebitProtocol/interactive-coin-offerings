@@ -51,7 +51,7 @@ library InteractiveCrowdsaleLib {
     // List of personal valuations, sorted from smallest to largest (from LinkedListLib)
     LinkedListLib.LinkedList valuationsList;
 
-    uint256 endWithdrawlTime;   // time when manual withdrawls are no longer allowed
+    uint256 endWithdrawalTime;   // time when manual withdrawals are no longer allowed
     uint256 valuationGranularity;   // the granularity that valuations can be submitted at
 
     uint256 valuationCutoff;        // pointer to the lowest personal valuation that can remain in the sale
@@ -97,7 +97,7 @@ library InteractiveCrowdsaleLib {
                 uint256 _fallbackExchangeRate,
                 uint256 _capAmountInCents,
                 uint256 _valuationGranularity,
-                uint256 _endWithdrawlTime,
+                uint256 _endWithdrawalTime,
                 uint256 _endTime,
                 uint8 _percentBurn,
                 CrowdsaleToken _token)
@@ -110,9 +110,9 @@ library InteractiveCrowdsaleLib {
                 _percentBurn,
                 _token);
 
-    require(_endWithdrawlTime < _endTime);
+    require(_endWithdrawalTime < _endTime);
     self.valuationGranularity = _valuationGranularity;
-    self.endWithdrawlTime = _endWithdrawlTime;
+    self.endWithdrawalTime = _endWithdrawalTime;
   }
 
   /// @dev calculates the number of tokens purchased based on the amount of wei spent and the price of tokens
@@ -157,7 +157,7 @@ library InteractiveCrowdsaleLib {
     require(msg.sender != self.base.owner);
     require(self.base.validPurchase());
     require(self.personalValuations[msg.sender] == 0 && self.base.hasContributed[msg.sender] == 0);   // bidder can't have already bid
-    if (now < self.endWithdrawlTime) {
+    if (now < self.endWithdrawalTime) {
       require(_personalValuation > _amount);
     } else {
       require(_personalValuation >= self.base.ownerBalance + _amount);    // The personal valuation submitted must be greater than the current valuation plus the bid
@@ -196,10 +196,10 @@ library InteractiveCrowdsaleLib {
     self.base.hasContributed[msg.sender] += _amount;
 
     if (_personalValuation >= self.valuationCutoff) {
-      // calculate the amout of ether in the owners balance and "deposit" it
+      // calculate the new total valuation since the bid's personal valuation was eligible
       self.base.ownerBalance += _amount;
 
-
+      // if the the new total valuation has increased enough to exceed the sum of the currect cutoff's group of bids, the cutoff needs to be increased
       while (self.base.ownerBalance-self.valuationSums[self.valuationCutoff] > self.valuationCutoff) {
         // subtract the minimal valuation bid sum from the total valuation
         self.base.ownerBalance -= self.valuationSums[self.valuationCutoff];
@@ -217,25 +217,25 @@ library InteractiveCrowdsaleLib {
 
 
   /// @dev Called when an address wants to manually withdraw their bid from the sale. puts their wei in the LeftoverWei mapping
-  /// @param self Stored crowdsale from crowdsale contract
-  /// @return true on succesful withdrawl
+  /// @param self Stored crowdsale frowithdrawalm crowdsale contract
+  /// @return true on succesful 
   function withdrawBid(InteractiveCrowdsaleStorage storage self) public returns (bool) {
     // The sender has to have already bid on the sale
     require(self.personalValuations[msg.sender] > 0);
 
     uint256 refundWei;
     // cannot withdraw after compulsory withdraw period is over unless the bid's valuation is below the cutoff
-    if (now >= self.endWithdrawlTime) {
+    if (now >= self.endWithdrawalTime) {
       require(self.personalValuations[msg.sender] < self.valuationCutoff);
 
       refundWei = self.base.hasContributed[msg.sender];
 
     } else {
-      uint256 multiplierPercent = (100*((self.endWithdrawlTime+self.base.milestoneTimes[0]) - now))/self.endWithdrawlTime;
+      uint256 multiplierPercent = (100*((self.endWithdrawalTime+self.base.milestoneTimes[0]) - now))/self.endWithdrawalTime;
       refundWei = (multiplierPercent*self.base.hasContributed[msg.sender])/100;
     }
       
-    // Put the sender's contributed wei into the leftoverWei mapping for later withdrawl
+    // Put the sender's contributed wei into the leftoverWei mapping for later withdrawal
     self.base.leftoverWei[msg.sender] += refundWei;
 
     // subtract the bidder's refund from its total contribution
@@ -248,6 +248,7 @@ library InteractiveCrowdsaleLib {
     if (self.personalValuations[msg.sender] >= self.valuationCutoff) {
       // subtract the bid from the balance of the owner
       self.base.ownerBalance -= refundWei;
+
 
       if (self.base.ownerBalance < self.valuationCutoff) {
         self.base.ownerBalance -= self.valuationSums[self.valuationCutoff];
@@ -264,7 +265,6 @@ library InteractiveCrowdsaleLib {
 
     LogBidWithdrawn(msg.sender, self.base.hasContributed[msg.sender], self.personalValuations[msg.sender]);
 
-    self.personalValuations[msg.sender] = 0;
   }
 
   /// @dev If the address' personal valuation is below the cutoff, refund them all their ETH.

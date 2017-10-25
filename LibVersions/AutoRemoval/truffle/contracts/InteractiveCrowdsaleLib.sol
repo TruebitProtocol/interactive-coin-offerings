@@ -51,7 +51,7 @@ library InteractiveCrowdsaleLib {
     // List of personal valuations, sorted from smallest to largest (from LinkedListLib)
     LinkedListLib.LinkedList valuationsList;
 
-    uint256 endWithdrawlTime;   // time when manual withdrawls are no longer allowed
+    uint256 endWithdrawalTime;   // time when manual withdrawals are no longer allowed
     uint256 valuationGranularity;   // the granularity that valuations can be submitted at
 
     mapping (address => uint256) personalValuations;    // the valuation that each address has submitted
@@ -93,7 +93,7 @@ library InteractiveCrowdsaleLib {
                 uint256 _fallbackExchangeRate,
                 uint256 _capAmountInCents,
                 uint256 _valuationGranularity,
-                uint256 _endWithdrawlTime,
+                uint256 _endWithdrawalTime,
                 uint256 _endTime,
                 uint8 _percentBurn,
                 CrowdsaleToken _token)
@@ -106,9 +106,9 @@ library InteractiveCrowdsaleLib {
                 _percentBurn,
                 _token);
 
-    require(_endWithdrawlTime < _endTime);
+    require(_endWithdrawalTime < _endTime);
     self.valuationGranularity = _valuationGranularity;
-    self.endWithdrawlTime = _endWithdrawlTime;
+    self.endWithdrawalTime = _endWithdrawalTime;
   }
 
   /// @dev Called when an address wants to submit bid to the sale
@@ -121,7 +121,7 @@ library InteractiveCrowdsaleLib {
     require(msg.sender != self.base.owner);
     require(self.base.validPurchase());
     require(self.personalValuations[msg.sender] == 0 && self.base.hasContributed[msg.sender] == 0);   // bidder can't have already bid
-    if (now < self.endWithdrawlTime) {
+    if (now < self.endWithdrawalTime) {
       require(_personalValuation > _amount);
     } else {
       require(_personalValuation >= self.base.ownerBalance + _amount);    // The personal valuation submitted must be greater than the current valuation plus the bid
@@ -198,26 +198,26 @@ library InteractiveCrowdsaleLib {
 
     LogBidAccepted(msg.sender, _amount-remainder, _personalValuation);
 
-    if (now >= self.endWithdrawlTime) {
+    if (now >= self.endWithdrawalTime) {
       autoWithdrawBids(self);    // run algorithm to remove bids with minimal personal Valuations
     }
   }
 
 
   /// @dev Called when an address wants to manually withdraw their bid from the sale. puts their wei in the LeftoverWei mapping
-  /// @return true on succesful withdrawl
+  /// @return true on succesful withdrawal
   function withdrawBid(InteractiveCrowdsaleStorage storage self) public returns (bool) {
     // The sender has to have already bid on the sale
     require(self.personalValuations[msg.sender] > 0);
     // cannot withdraw after compulsory withdraw period is over
-    require(now < self.endWithdrawlTime);
+    require(now < self.endWithdrawalTime);
 
-    uint256 multiplierPercent = (100*((self.endWithdrawlTime+self.base.milestoneTimes[0]) - now))/self.endWithdrawlTime;
+    uint256 multiplierPercent = (100*((self.endWithdrawalTime+self.base.milestoneTimes[0]) - now))/self.endWithdrawalTime;
     uint256 refundWei = (multiplierPercent*self.base.hasContributed[msg.sender])/100;
     uint256 refundTokens = (multiplierPercent*self.base.withdrawTokensMap[msg.sender])/100;
     bool addressRemaining = false;
 
-    // Put the sender's contributed wei into the leftoverWei mapping for later withdrawl
+    // Put the sender's contributed wei into the leftoverWei mapping for later withdrawal
     self.base.leftoverWei[msg.sender] += refundWei;
 
     // subtract the bid from the balance of the owner
@@ -252,7 +252,7 @@ library InteractiveCrowdsaleLib {
   }
 
   /// @dev function that automatically removes bids that have personal valuations lower than the total sale valuation
-  /// @return true when all withdrawls have succeeded
+  /// @return true when all withdrawals have succeeded
   function autoWithdrawBids(InteractiveCrowdsaleStorage storage self) internal returns (bool) {
     while (self.valuationsList.getAdjacent(HEAD,NEXT) < self.base.ownerBalance) {
       // the first entry in the personal valuations list is the smallest

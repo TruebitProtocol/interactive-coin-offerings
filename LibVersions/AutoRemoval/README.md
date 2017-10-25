@@ -18,9 +18,9 @@ addresses can only submit one bid each.
 
 When submitting a bid, a bidder can only submit personal valuations in a granularity set by the owner of the sale.  We chose this in order to reduce time and space complexity of the linked list implementation.  The bidders also submit a prediction for where to start searching in the list.  We chose this with the intent that the owner will publish the valuations at certain placements in the linked list, like 1/4 of the way through, 1/2 way through, 3/4 of the way through, etc depending on the size of the list.  Bidders chose the search prediction that is closest to their personal Valuation to save time and gas in finding their spot in the list.
 
-After the inputs have been checked, number of tokens purchased are calculated and credited to the buyer, bids are added to the toal valuation, the personal valuation is recorded in the list and mapping for the addresses, and then the automatic withdrawl function is called if it is past the manual withdrawl time period.
+After the inputs have been checked, number of tokens purchased are calculated and credited to the buyer, bids are added to the toal valuation, the personal valuation is recorded in the list and mapping for the addresses, and then the automatic withdrawal function is called if it is past the manual withdrawal time period.
 
-When a manual bid withdrawl is called, it reverses all the actions that were taken in the submitBid function.
+When a manual bid withdrawal is called, it reverses all the actions that were taken in the submitBid function.
 
 Automatic removal and refunding of bids is done just like is described in the paper. We add 1 our fraction, q, that is used to do partial refunds, in order to make up for the lack of precision in integer arithmetic.  
 
@@ -32,7 +32,7 @@ There are a few additions that still need to be made, most notably two of the ch
 
 1. Bids which exercise voluntary withdrawals forfeit their "bonus."
 
-We also need to figure out a better way to handle autowithdrawls because that could end up costing average bidders a lot of gas to pay for the computation of finding minimal personal valuations and refunding them.  The only Solutions proposed right now is to have the owner periodically call autoWithdrawl manually so the owner pays for the gas
+We also need to figure out a better way to handle autowithdrawals because that could end up costing average bidders a lot of gas to pay for the computation of finding minimal personal valuations and refunding them.  The only Solutions proposed right now is to have the owner periodically call autoWithdrawal manually so the owner pays for the gas
 
 We want to try to make this implementation as robust, secure, and high performing as possible, so we are open to improvement suggestions on almost any aspect of the implementation.  Please don't hesitate to open an issue or bring it up on the slack channel.
 
