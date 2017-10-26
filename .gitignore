@@ -1,0 +1,5 @@
+LibVersions/AutoRemoval/truffle/build/
+LibVersions/PostRemoval/truffle/build/
+
+LibVersions/AutoRemoval/truffle/node_modules/
+LibVersions/PostRemoval/truffle/node_modules/
