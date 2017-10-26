@@ -7,7 +7,7 @@ See [Majoolr's Crowdsale Repo](https://github.com/Majoolr/ethereum-libraries/tre
 
 ## Two different Designs
 
-see thir respective READMEs for more detailed descriptions
+See their respective READMEs for more detailed descriptions
 
 ### AutoRemoval
 
