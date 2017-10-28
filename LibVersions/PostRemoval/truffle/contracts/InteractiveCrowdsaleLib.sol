@@ -60,7 +60,8 @@ library InteractiveCrowdsaleLib {
     mapping (uint256 => uint256) valuationSums;         // the sums of bids at each valuation
     mapping (uint256 => uint256) numBidsAtValuation;    // the number of active bids at a certain valuation
 
-    mapping (address => uint256) personalValuations;    // the valuation that each address has submitted
+    // index-0 is the personal minimum and index-1 is the personal valuation
+    mapping (address => uint256[2]) personalMinAndValue;
   }
 
   // Indicates when a bidder submits a bid to the crowdsale
@@ -118,32 +119,34 @@ library InteractiveCrowdsaleLib {
   /// @param self Stored crowdsale from crowdsale contract
   /// @param _amount amound of wei that the buyer sent
   /// @param _price price of tokens in the sale, in tokens/ETH
-  /// @return uint256 numTokens the number of tokens purchased
-  /// @return remainder  any remaining wei leftover from integer division
+  /// @return _numTokens the number of tokens purchased
+  /// @return _remainder  any remaining wei leftover from integer division
   function calculateTokenPurchase(InteractiveCrowdsaleStorage storage self, uint256 _amount, uint256 _price) internal returns (uint256,uint256) {
-    uint256 zeros; //for calculating token
-    uint256 remainder = 0; //temp calc holder for division remainder for leftover wei
+    uint256 _zeros; //for calculating token
+    uint256 _remainder; //temp calc holder for division remainder for leftover wei
+    uint256 _numTokens;
+
     bool err;
     uint256 result;
-    uint256 numTokens;
 
     // Find the number of tokens as a function in wei
     (err,result) = _amount.times(_price);
     require(!err);
 
     if(self.base.tokenDecimals <= 18){
-      zeros = 10**(18-uint256(self.base.tokenDecimals));
-      numTokens = result/zeros;
-      remainder = result % zeros;     // extra wei leftover from the division
+      _zeros = 10**(18-uint256(self.base.tokenDecimals));
+      _numTokens = result/_zeros;
+      _remainder = result % _zeros;     // extra wei leftover from the division
     } else {
-      zeros = 10**(uint256(self.base.tokenDecimals)-18);
-      numTokens = result*zeros;
+      _zeros = 10**(uint256(self.base.tokenDecimals)-18);
+      (err,_numTokens) = result.times(_zeros);
+      require(!err);
     }
 
     // make sure there are enough tokens available to satisfy the bid
-    require(numTokens <= self.base.withdrawTokensMap[self.base.owner]);
+    require(_numTokens <= self.base.withdrawTokensMap[self.base.owner]);
 
-    return (numTokens,remainder);
+    return (_numTokens,_remainder);
   }
 
   /// @dev Called when an address wants to submit bid to the sale
