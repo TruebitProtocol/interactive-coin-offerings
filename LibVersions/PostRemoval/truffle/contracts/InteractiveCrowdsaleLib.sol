@@ -9,16 +9,15 @@ pragma solidity ^0.4.15;
  * The MIT License (MIT)
  * https://github.com/Majoolr/ethereum-libraries/blob/master/LICENSE
  *
- * The InteractiveCrowdsale Library provides functionality to create a initial coin offering
- * for a standard token sale with high supply where there is a direct ether to
- * token transfer.
+ * The InteractiveCrowdsale Library provides functionality to create a crowdsale
+ * based on the white paper initially proposed by Jason Teutsch and Vitalik
+ * Buterin. See https://people.cs.uchicago.edu/~teutsch/papers/ico.pdf for
+ * further information.
  *
- * Majoolr provides smart contract services and security reviews for contract
- * deployments in addition to working on open source projects in the Ethereum
- * community. Our purpose is to test, document, and deploy reusable code onto the
- * blockchain and improve both security and usability. We also educate non-profits,
- * schools, and other community members about the application of blockchain
- * technology. For further information: majoolr.io
+ * This library was developed in a collaborative effort among many organizations
+ * including TrueBit, Majoolr, Zeppelin, and Consensys.
+ * For further information: truebit.io, majoolr.io, zeppelin.solutions,
+ * consensys.net
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
  * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
@@ -120,7 +119,7 @@ library InteractiveCrowdsaleLib {
   /// @param _amount amound of wei that the buyer sent
   /// @param _price price of tokens in the sale, in tokens/ETH
   /// @return uint256 numTokens the number of tokens purchased
-  /// @return remainder  any remaining wei leftover from integer division 
+  /// @return remainder  any remaining wei leftover from integer division
   function calculateTokenPurchase(InteractiveCrowdsaleStorage storage self, uint256 _amount, uint256 _price) internal returns (uint256,uint256) {
     uint256 zeros; //for calculating token
     uint256 remainder = 0; //temp calc holder for division remainder for leftover wei
@@ -218,7 +217,7 @@ library InteractiveCrowdsaleLib {
 
   /// @dev Called when an address wants to manually withdraw their bid from the sale. puts their wei in the LeftoverWei mapping
   /// @param self Stored crowdsale frowithdrawalm crowdsale contract
-  /// @return true on succesful 
+  /// @return true on succesful
   function withdrawBid(InteractiveCrowdsaleStorage storage self) public returns (bool) {
     // The sender has to have already bid on the sale
     require(self.personalValuations[msg.sender] > 0);
@@ -234,7 +233,7 @@ library InteractiveCrowdsaleLib {
       uint256 multiplierPercent = (100*((self.endWithdrawalTime+self.base.milestoneTimes[0]) - now))/self.endWithdrawalTime;
       refundWei = (multiplierPercent*self.base.hasContributed[msg.sender])/100;
     }
-      
+
     // Put the sender's contributed wei into the leftoverWei mapping for later withdrawal
     self.base.leftoverWei[msg.sender] += refundWei;
 
@@ -280,14 +279,14 @@ library InteractiveCrowdsaleLib {
     bool err;
 
     if (self.personalValuations[msg.sender] < self.valuationCutoff) {
-      
+
       self.base.leftoverWei[msg.sender] += self.base.hasContributed[msg.sender];
     } else if (self.personalValuations[msg.sender] == self.valuationCutoff) {
       uint256 q;
 
       // calculate the fraction of each minimal valuation bidders ether and tokens to refund
       q = (100*(self.base.ownerBalance - self.valuationCutoff)/(self.valuationSums[self.valuationCutoff])) + 1;
-      
+
       // calculate the portion that this address has to take out of their bid
       uint256 refundAmount = (q*self.base.hasContributed[msg.sender])/100;
 
