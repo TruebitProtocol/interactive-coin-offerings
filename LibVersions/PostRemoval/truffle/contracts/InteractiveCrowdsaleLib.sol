@@ -50,22 +50,27 @@ library InteractiveCrowdsaleLib {
     // List of personal valuations, sorted from smallest to largest (from LinkedListLib)
     LinkedListLib.LinkedList valuationsList;
 
+    // List of personal minimums
+    LinkedListLib.LinkedList minimumsList;
+
     uint256 endWithdrawalTime;   // time when manual withdrawals are no longer allowed
     uint256 valuationGranularity;   // the granularity that valuations can be submitted at
 
-    uint256 valuationCutoff;        // pointer to the lowest personal valuation that can remain in the sale
+    // pointer to the lowest personal valuation that can remain in the sale
+    uint256 valuationCutoff;
 
     mapping (address => uint256) pricePurchasedAt;      // shows the price that the address purchased tokens at
 
-    mapping (uint256 => uint256) valuationSums;         // the sums of bids at each valuation
+    mapping (uint256 => uint256) valuationSum;         // the sum of bids at each valuation
     mapping (uint256 => uint256) numBidsAtValuation;    // the number of active bids at a certain valuation
+    mapping (uint256 => uint256) minimumSum;           // the sum of bids at this minimum
 
     // index-0 is the personal minimum and index-1 is the personal valuation
     mapping (address => uint256[2]) personalMinAndValue;
   }
 
   // Indicates when a bidder submits a bid to the crowdsale
-  event LogBidAccepted(address indexed bidder, uint256 amount, uint256 personalValuation);
+  event LogBidAccepted(address indexed bidder, uint256 amount, uint256 personalValuation, uint256 personalMinimum);
 
   // Indicates when a bidder manually withdraws their bid from the crowdsale
   event LogBidWithdrawn(address indexed bidder, uint256 amount, uint256 personalValuation);
@@ -155,18 +160,29 @@ library InteractiveCrowdsaleLib {
   /// @param _personalValuation the total crowdsale valuation (wei) that the bidder is comfortable with
   /// @param _listPredict prediction of where the valuation will go in the linked list
   /// @return true on succesful bid
-  function submitBid(InteractiveCrowdsaleStorage storage self, uint256 _amount, uint256 _personalValuation, uint256 _listPredict) returns (bool) {
+  function submitBid(InteractiveCrowdsaleStorage storage self,
+                     uint256 _amount,
+                     uint256 _personalValuation,
+                     uint256 _valuePredict,
+                     uint256 _personalMinimum,
+                     uint256 _minPredict) returns (bool) {
     require(msg.sender != self.base.owner);
     require(self.base.validPurchase());
-    require(self.personalValuations[msg.sender] == 0 && self.base.hasContributed[msg.sender] == 0);   // bidder can't have already bid
+    // bidder can't have already bid
+    require(self.personalMinAndValue[msg.sender][1] == 0 && self.base.hasContributed[msg.sender] == 0);
+
     if (now < self.endWithdrawalTime) {
       require(_personalValuation > _amount);
     } else {
-      require(_personalValuation >= self.base.ownerBalance + _amount);    // The personal valuation submitted must be greater than the current valuation plus the bid
+      // The personal valuation submitted must be greater than the current valuation plus the bid
+      require(_personalValuation >= self.base.ownerBalance + _amount);
     }
-    require((_personalValuation % self.valuationGranularity) == 0);      // personal valuations need to be in multiples of whatever the owner sets
+    // personal valuations need to be in multiples of whatever the owner sets
+    require((_personalValuation % self.valuationGranularity) == 0);
 
-    require((self.base.ownerBalance + _amount) <= self.base.capAmount);  // bid must not exceed the total raise cap of the sale
+    // bid must not exceed the total raise cap of the sale
+    // **Could change this to add up to capAmount and provide change for last bidder
+    require((self.base.ownerBalance + _amount) <= self.base.capAmount);
 
     // if the token price increase interval has passed, update the current day and change the token price
     if ((self.base.milestoneTimes.length > self.base.currentMilestone + 1) &&
@@ -183,36 +199,65 @@ library InteractiveCrowdsaleLib {
     }
 
     // add the bid to the sorted valuations list
-    uint256 listSpot;
-    listSpot = self.valuationsList.getSortedSpot(_listPredict,_personalValuation,NEXT);
-    self.valuationsList.insert(listSpot,_personalValuation,PREV);
+    uint256 _listSpot;
+    _listSpot = self.valuationsList.getSortedSpot(_valuePredict,_personalValuation,NEXT);
+    self.valuationsList.insert(_listSpot,_personalValuation,PREV);
 
-    // add the valuation to the address => valuations mapping
-    self.personalValuations[msg.sender] = _personalValuation;
+    // add personal minimum to minimum list
+    _listSpot = self.minimumsList.getSortedSpot(_minPredict,_personalMinimum,NEXT);
+    self.minimumsList.insert(_listSpot,_personalMinimum,PREV);
 
-    // add the bid to the sum of bids at this valuation
-    self.valuationSums[_personalValuation] += _amount;
-    self.numBidsAtValuation[_personalValuation] += 1;
+    // add the minimum and valuation to the address => [minimum, valuation] mapping
+    self.personalMinAndValue[msg.sender][0] = _personalMinimum;
+    self.personalMinAndValue[msg.sender][1] = _personalValuation;
 
     // add the bid to bidder's contribution amount.  can't overflow because it is under the cap
     self.base.hasContributed[msg.sender] += _amount;
 
-    if (_personalValuation >= self.valuationCutoff) {
-      // calculate the new total valuation since the bid's personal valuation was eligible
-      self.base.ownerBalance += _amount;
+    bool commit;
+    self.minimumSum[_personalMinimum] += _amount;
+    uint256 _totalSums = self.minimumSum[_personalMinimum];
+    if(self.base.ownerBalance < _personalMinimum){
+      bool _nodeExists;
+      uint256 _prevMin;
+      uint256 _nextMin;
+      (_nodeExists, _prevMin, _nextMin) = self.minimumsList.getNode(_personalMinimum);
 
-      // if the the new total valuation has increased enough to exceed the sum of the currect cutoff's group of bids, the cutoff needs to be increased
-      while (self.base.ownerBalance-self.valuationSums[self.valuationCutoff] > self.valuationCutoff) {
-        // subtract the minimal valuation bid sum from the total valuation
-        self.base.ownerBalance -= self.valuationSums[self.valuationCutoff];
-
-        // set the new cutoff as the next highest personal valuation
-        self.valuationCutoff = self.valuationsList.getAdjacent(self.valuationCutoff,NEXT);
+      while((_prevMin >= self.base.ownerBalance) && _nodeExists){
+        _totalSums += self.minimumSum[_prevMin];
+        (_nodeExists, _prevMin, _nextMin) = self.minimumsList.getNode(_prevMin);
       }
 
+      if((self.base.ownerBalance + _totalSums) >= _personalMinimum)
+        commit = true;
+    } else {
+      _totalSums = _amount;
+      commit = true;
     }
 
-    LogBidAccepted(msg.sender, _amount, _personalValuation);
+    if(commit){
+      // add the bid to the sum of bids at this valuation
+      self.valuationSum[_personalValuation] += _amount;
+      self.numBidsAtValuation[_personalValuation] += 1;
+
+      if (_personalValuation >= self.valuationCutoff) {
+        // calculate the new total valuation since the bid's personal valuation was eligible
+        self.base.ownerBalance += _totalSums;
+
+        // if the the new total valuation has increased enough to exceed the sum
+        // of the currect cutoff's group of bids, the cutoff needs to be increased
+        while (self.base.ownerBalance-self.valuationSums[self.valuationCutoff] > self.valuationCutoff) {
+          // subtract the minimal valuation bid sum from the total valuation
+          self.base.ownerBalance -= self.valuationSums[self.valuationCutoff];
+
+          // set the new cutoff as the next highest personal valuation
+          self.valuationCutoff = self.valuationsList.getAdjacent(self.valuationCutoff,NEXT);
+        }
+
+      }
+    }
+
+    LogBidAccepted(msg.sender, _amount, _personalValuation, _personalMinimum);
 
     return true;
   }
