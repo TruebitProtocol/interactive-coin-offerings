@@ -28,6 +28,22 @@ contract InteractiveCrowdsaleTestContract {
   	sale.init(owner, saleData, fallbackExchangeRate, capAmountInCents, valuationGranularity, endWithdrawalTime, endTime, percentBurn, token);
   }
 
+  // Migrate Events from Libs for contract web3 object
+
+  // Interactive Events
+  event LogBidAccepted(address indexed bidder, uint256 amount, uint256 personalValuation, uint256 personalMinimum);
+  event LogBidWithdrawn(address indexed bidder, uint256 amount, uint256 personalValuation);
+  event LogBidRemoved(address indexed bidder, uint256 personalValuation);
+  event LogErrorMsg(uint256 amount, string Msg);
+  event LogTokenPriceChange(uint256 amount, string Msg);
+
+  // Base Crowdsale Events
+  event LogTokensWithdrawn(address indexed _bidder, uint256 Amount);
+  event LogWeiWithdrawn(address indexed _bidder, uint256 Amount);
+  event LogOwnerEthWithdrawn(address indexed owner, uint256 amount, string Msg);
+  event LogNoticeMsg(address _buyer, uint256 value, string Msg);
+  event LogErrorMsg(string Msg);
+
   function () {}
 
   function submitBid(uint256 _personalValuation,
