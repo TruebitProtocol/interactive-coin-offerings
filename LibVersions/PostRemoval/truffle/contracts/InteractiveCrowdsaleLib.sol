@@ -59,6 +59,9 @@ library InteractiveCrowdsaleLib {
     // pointer to the lowest personal valuation that can remain in the sale
     uint256 valuationCutoff;
 
+    // pointer to the highest minimum value obtained
+    uint256 minimumCutoff
+
     mapping (address => uint256) pricePurchasedAt;      // shows the price that the address purchased tokens at
 
     mapping (uint256 => uint256) valuationSum;         // the sum of bids at each valuation
@@ -217,6 +220,7 @@ library InteractiveCrowdsaleLib {
     bool commit;
     self.minimumSum[_personalMinimum] += _amount;
     uint256 _totalSums = self.minimumSum[_personalMinimum];
+
     if(self.base.ownerBalance < _personalMinimum){
       bool _nodeExists;
       uint256 _prevMin;
@@ -228,8 +232,10 @@ library InteractiveCrowdsaleLib {
         (_nodeExists, _prevMin, _nextMin) = self.minimumsList.getNode(_prevMin);
       }
 
-      if((self.base.ownerBalance + _totalSums) >= _personalMinimum)
+      if((self.base.ownerBalance + _totalSums) >= _personalMinimum){
+        self.minimumCutoff = _personalMinimum;
         commit = true;
+      }
     } else {
       _totalSums = _amount;
       commit = true;
@@ -263,12 +269,13 @@ library InteractiveCrowdsaleLib {
   }
 
 
-  /// @dev Called when an address wants to manually withdraw their bid from the sale. puts their wei in the LeftoverWei mapping
+  /// @dev Called when an address wants to manually withdraw their bid from the sale.
+  ///      puts their wei in the LeftoverWei mapping
   /// @param self Stored crowdsale frowithdrawalm crowdsale contract
   /// @return true on succesful
   function withdrawBid(InteractiveCrowdsaleStorage storage self) public returns (bool) {
     // The sender has to have already bid on the sale
-    require(self.personalValuations[msg.sender] > 0);
+    require(self.personalMinAndValue[msg.sender][1] > 0);
 
     uint256 refundWei;
     // cannot withdraw after compulsory withdraw period is over unless the bid's valuation is below the cutoff
@@ -289,18 +296,35 @@ library InteractiveCrowdsaleLib {
     self.base.hasContributed[msg.sender] -= refundWei;
 
     // subtract the bid from the sum of bids at this valuation
-    self.valuationSums[self.personalValuations[msg.sender]] -= refundWei;
+    self.valuationSum[self.personalValuations[msg.sender]] -= refundWei;
+    self.minimumSum[self.personalValuations[msg.sender]] -= refundWei;
     self.numBidsAtValuation[self.personalValuations[msg.sender]] -= 1;
 
-    if (self.personalValuations[msg.sender] >= self.valuationCutoff) {
+    if (self.personalMinAndValue[msg.sender][1] >= self.valuationCutoff) {
       // subtract the bid from the balance of the owner
       self.base.ownerBalance -= refundWei;
+      if(self.base.ownerBalance < self.minimumCutoff){
+        self.base.ownerBalance -= self.minimumSum[self.minimumCutoff];
+        while(self.base.ownerBalance < self.valuationCutoff) {
+          self.valuationCutoff = self.valuationsList.getAdjacent(self.valuationCutoff,PREV);
+          self.base.ownerBalance += self.valuationSums[self.valuationCutoff];
+        }
 
+        bool _nodeExists;
+        uint256 _prevMin;
+        uint256 _nextMin;
+        (_nodeExists, _prevMin, _nextMin) = self.minimumsList.getNode(self.minimumCutoff);
 
-      if (self.base.ownerBalance < self.valuationCutoff) {
-        self.base.ownerBalance -= self.valuationSums[self.valuationCutoff];
+        while(self.base.ownerBalance < self.minimumCutoff){
+          self.base.ownerBalance -= self.minimumSum[_prevMin];
+          while(self.base.ownerBalance < self.valuationCutoff) {
+            self.valuationCutoff = self.valuationsList.getAdjacent(self.valuationCutoff,PREV);
+            self.base.ownerBalance += self.valuationSums[self.valuationCutoff];
+          }
+          (_nodeExists, _prevMin, _nextMin) = self.minimumsList.getNode(_prevMin);
+        }
 
-        self.valuationCutoff = self.valuationsList.getAdjacent(self.valuationCutoff,PREV);
+        self.minimumCutoff = _prevMin;
       }
     }
 
