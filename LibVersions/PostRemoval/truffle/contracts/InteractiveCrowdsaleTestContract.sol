@@ -28,12 +28,12 @@ contract InteractiveCrowdsaleTestContract {
   	sale.init(owner, saleData, fallbackExchangeRate, capAmountInCents, valuationGranularity, endWithdrawalTime, endTime, percentBurn, token);
   }
 
-  // fallback function can be used to buy tokens
-  function () payable {
-    //receivePurchase();
-  }
+  function () {}
 
-  function submitBid(uint256 _personalValuation, uint256 _listPredict) payable public returns (bool) {
+  function submitBid(uint256 _personalValuation,
+                     uint256 _valuePredict,
+                     uint256 _personalMinimum,
+                     uint256 _minPredict) payable public returns (bool) {
     return sale.submitBid(msg.value, _personalValuation, _listPredict);
   }
 
