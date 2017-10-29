@@ -334,12 +334,14 @@ library InteractiveCrowdsaleLib {
       assert(self.valuationsList.remove(self.personalValuations[msg.sender]) == self.personalValuations[msg.sender]);
     }
 
+    // NEED TO ADD SAME LOGIC FOR PERSONAL MINS
     LogBidWithdrawn(msg.sender, self.base.hasContributed[msg.sender], self.personalValuations[msg.sender]);
 
   }
 
-  /// @dev If the address' personal valuation is below the cutoff, refund them all their ETH.
-  ///      if it is above the cutoff, calculate tokens purchased and refund leftoever ETH
+  /// @dev If the address' personal valuation is below the valuationCutoff or
+  ///      personal minimum is more than the minimumCutoff, refund them all their ETH.
+  ///      If it is above the cutoff, calculate tokens purchased and refund leftoever ETH
   /// @param self Stored crowdsale from crowdsale contract
   /// @return bool success if the contract runs successfully
   function retreiveFinalResult(InteractiveCrowdsaleStorage storage self) internal returns (bool) {
@@ -350,10 +352,11 @@ library InteractiveCrowdsaleLib {
     uint256 remainder;
     bool err;
 
-    if (self.personalValuations[msg.sender] < self.valuationCutoff) {
+    if ((self.personalMinAndValue[msg.sender][1] < self.valuationCutoff) ||
+        (sel.f.personalMinAndValue[msg.sender][0] > self.minimumCutoff)) {
 
       self.base.leftoverWei[msg.sender] += self.base.hasContributed[msg.sender];
-    } else if (self.personalValuations[msg.sender] == self.valuationCutoff) {
+    } else if (self.personalMinAndValue[msg.sender][1] == self.valuationCutoff) {
       uint256 q;
 
       // calculate the fraction of each minimal valuation bidders ether and tokens to refund
