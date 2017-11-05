@@ -43,6 +43,8 @@ library InteractiveCrowdsaleLib {
   bool constant PREV = false;
   bool constant NEXT = true;
 
+  uint256 constant FEE = 63000000000000;
+
   struct InteractiveCrowdsaleStorage {
 
     CrowdsaleLib.CrowdsaleStorage base; // base storage from CrowdsaleLib
@@ -67,6 +69,11 @@ library InteractiveCrowdsaleLib {
     mapping (uint256 => uint256) valuationSum;         // the sum of bids at each valuation
     mapping (uint256 => uint256) numBidsAtValuation;    // the number of active bids at a certain valuation
     mapping (uint256 => uint256) minimumSum;           // the sum of bids at this minimum
+
+    // 0-index is the cumulative delta impact on value pointer
+    // 1-index is a positive delta if '0' or negative if '1'
+    // 2-index is the accumulated number of fees
+    mapping (uint256 => uint256[3]) valueDelta;
 
     // index-0 is the personal minimum and index-1 is the personal valuation
     mapping (address => uint256[2]) personalMinAndValue;
@@ -174,11 +181,24 @@ library InteractiveCrowdsaleLib {
     // bidder can't have already bid
     require(self.personalMinAndValue[msg.sender][1] == 0 && self.base.hasContributed[msg.sender] == 0);
 
+    bool err;
+
+    // Fee is 63 Szabo calculated as follows:
+    // fee pays for pointer to add or subtract bid value to/from the value
+    // pointer, clears fee, and moves to the next bucket. Gas is +3 for add/subtract
+    // +1 for loop +5,000 for sstore change = 5,004 - half for sstore non-zero
+    // to zero refund = 2,502. Round up to 3,000 for incentive premium to caller
+    // for setting value pointer. 3,000 * 21 Gwei = 63 Szabo
+    // this fee is probably high because multiple bids will accumulate in the same
+    // bucket and should be adjusted as testing moves along
+    (err, _amount) = _amount.minus(FEE);
+    require(!err);
+
     if (now < self.endWithdrawalTime) {
       require(_personalValuation > _amount);
     } else {
       // The personal valuation submitted must be greater than the current valuation plus the bid
-      require(_personalValuation >= self.base.ownerBalance + _amount);
+      require(_personalValuation >= self.valuationCutoff + _amount);
     }
     // personal valuations need to be in multiples of whatever the owner sets
     require((_personalValuation % self.valuationGranularity) == 0);
@@ -203,12 +223,15 @@ library InteractiveCrowdsaleLib {
 
     // add the bid to the sorted valuations list
     uint256 _listSpot;
-    _listSpot = self.valuationsList.getSortedSpot(_valuePredict,_personalValuation,NEXT);
-    self.valuationsList.insert(_listSpot,_personalValuation,PREV);
+    if(!self.valuationsList.nodeExists(_personalValuation)){
+          _listSpot = self.valuationsList.getSortedSpot(_valuePredict,_personalValuation,NEXT);
+          self.valuationsList.insert(_listSpot,_personalValuation,PREV);
+    }
 
-    // add personal minimum to minimum list
-    _listSpot = self.minimumsList.getSortedSpot(_minPredict,_personalMinimum,NEXT);
-    self.minimumsList.insert(_listSpot,_personalMinimum,PREV);
+    if(!self.valuationsList.nodeExists(_personalMinimum)){
+      _listSpot = self.valuationsList.getSortedSpot(_valuePredict,_personalMinimum,NEXT);
+      self.valuationsList.insert(_listSpot,_personalMinimum,PREV);
+    }
 
     // add the minimum and valuation to the address => [minimum, valuation] mapping
     self.personalMinAndValue[msg.sender][0] = _personalMinimum;
@@ -217,51 +240,47 @@ library InteractiveCrowdsaleLib {
     // add the bid to bidder's contribution amount.  can't overflow because it is under the cap
     self.base.hasContributed[msg.sender] += _amount;
 
-    bool commit;
-    self.minimumSum[_personalMinimum] += _amount;
-    uint256 _totalSums = self.minimumSum[_personalMinimum];
+    // We are calculating the change impact each bucket has on the value pointer.
+    // In this mechanism, the bid's personal valuation adds to the pointer and
+    // the personal minimum subtracts from the pointer. Therefore, the value delta
+    // in each bucket will be positive if there are more personal values and negative
+    // if more personal minimums. In order to maintain the full uint256 spectrum,
+    // each bucket has an indicator if the value in index-0 (the cumulative delta)
+    // is positive or negative. If it is an overall negative delta, index-1 will
+    // be '1', if it is a positive delta, index-1 will be '0'
 
-    if(self.base.ownerBalance < _personalMinimum){
-      bool _nodeExists;
-      uint256 _prevMin;
-      uint256 _nextMin;
-      (_nodeExists, _prevMin, _nextMin) = self.minimumsList.getNode(_personalMinimum);
+    // First we add the bid amount to the delta in the indicated personal valuation bucket
 
-      while((_prevMin >= self.base.ownerBalance) && _nodeExists){
-        _totalSums += self.minimumSum[_prevMin];
-        (_nodeExists, _prevMin, _nextMin) = self.minimumsList.getNode(_prevMin);
-      }
-
-      if((self.base.ownerBalance + _totalSums) >= _personalMinimum){
-        self.minimumCutoff = _personalMinimum;
-        commit = true;
-      }
+    // if the delta is positive
+    if(self.valueDelta[_personalValuation][1] == 0){
+      self.valueDelta[_personalValuation][0] += _amount;
     } else {
-      _totalSums = _amount;
-      commit = true;
-    }
-
-    if(commit){
-      // add the bid to the sum of bids at this valuation
-      self.valuationSum[_personalValuation] += _amount;
-      self.numBidsAtValuation[_personalValuation] += 1;
-
-      if (_personalValuation >= self.valuationCutoff) {
-        // calculate the new total valuation since the bid's personal valuation was eligible
-        self.base.ownerBalance += _totalSums;
-
-        // if the the new total valuation has increased enough to exceed the sum
-        // of the currect cutoff's group of bids, the cutoff needs to be increased
-        while (self.base.ownerBalance-self.valuationSums[self.valuationCutoff] > self.valuationCutoff) {
-          // subtract the minimal valuation bid sum from the total valuation
-          self.base.ownerBalance -= self.valuationSums[self.valuationCutoff];
-
-          // set the new cutoff as the next highest personal valuation
-          self.valuationCutoff = self.valuationsList.getAdjacent(self.valuationCutoff,NEXT);
-        }
-
+      // if delta is negative and the new bid exceeds the delta, change the delta to positive
+      if(_amount > self.valueDelta[_personalValuation][0]){
+        self.valueDelta[_personalValuation][0] = _amount - self.valueDelta[_personalValuation][0];
+        self.valueDelta[_personalValuation][1] = 0;
+      } else {
+        self.valueDelta[_personalValuation][0] -= _amount;
       }
     }
+
+    // Next we subtract the bid amount from the delta in the indicated personal minimum bucket
+
+    // if the delta is negative
+    if(self.valueDelta[_personalMinimum][1] == 1){
+      self.valueDelta[_personalValuation][0] += _amount;
+    } else {
+      // if delta is positive and the new bid exceeds the delta, change the delta to negative
+      if(_amount > self.valueDelta[_personalMinimum][0]){
+        self.valueDelta[_personalMinimum][0] = _amount - self.valueDelta[_personalValuation][0];
+        self.valueDelta[_personalValuation][1] = 1;
+      } else {
+        self.valueDelta[_personalValuation][0] -= _amount;
+      }
+    }
+
+    // collect the fee from earlier
+    self.valueDelta[_personalValuation][2]++;
 
     LogBidAccepted(msg.sender, _amount, _personalValuation, _personalMinimum);
 
