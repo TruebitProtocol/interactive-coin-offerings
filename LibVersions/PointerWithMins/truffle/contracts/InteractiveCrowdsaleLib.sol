@@ -44,6 +44,7 @@ library InteractiveCrowdsaleLib {
   bool constant NEXT = true;
 
   uint256 constant FEE = 63000000000000;
+  uint256 constant LOWGASLIMIT = 31000;
 
   struct InteractiveCrowdsaleStorage {
 
@@ -51,12 +52,19 @@ library InteractiveCrowdsaleLib {
 
     // List of personal valuations, sorted from smallest to largest (from LinkedListLib)
     LinkedListLib.LinkedList valuationsList;
-
-    // List of personal minimums
-    LinkedListLib.LinkedList minimumsList;
+    // Keep track of last node to avoid iterating for it
+    uint256 highestCap;
 
     uint256 endWithdrawalTime;   // time when manual withdrawals are no longer allowed
     uint256 valuationGranularity;   // the granularity that valuations can be submitted at
+    bool pointerSet;
+    bool allBucketsPoked;
+    bool finalValueSet;
+
+    // temp holders for pointer iteration
+    uint256 currentBucket;
+    uint256 endingBucket;
+    uint256 totalCommit;
 
     // pointer to the lowest personal valuation that can remain in the sale
     uint256 valuationPointer;
@@ -186,8 +194,8 @@ library InteractiveCrowdsaleLib {
     // Fee is 63 Szabo calculated as follows:
     // fee pays for pointer to add or subtract bid value to/from the value
     // pointer, clears fee, and moves to the next bucket. Gas is +3 for add/subtract
-    // +1 for loop +5,000 for sstore change = 5,004 - half for sstore non-zero
-    // to zero refund = 2,502. Round up to 3,000 for incentive premium to caller
+    // +3 for gas check +1 for loop +5,000 for sstore change = 5,007 - half for sstore non-zero
+    // to zero refund = 2,503. Round up to 3,000 for incentive premium to caller
     // for setting value pointer. 3,000 * 21 Gwei = 63 Szabo
     // this fee is probably high because multiple bids will accumulate in the same
     // bucket and should be adjusted as testing moves along
@@ -226,6 +234,7 @@ library InteractiveCrowdsaleLib {
     if(!self.valuationsList.nodeExists(_personalValuation)){
           _listSpot = self.valuationsList.getSortedSpot(_valuePredict,_personalValuation,NEXT);
           self.valuationsList.insert(_listSpot,_personalValuation,PREV);
+          if(_personalValuation > highestCap) highestCap = _personalValuation;
     }
 
     if(!self.valuationsList.nodeExists(_personalMinimum)){
@@ -343,6 +352,71 @@ library InteractiveCrowdsaleLib {
       } else {
         self.valueDelta[_personalMinimum][0] -= _amount;
       }
+    }
+  }
+
+  /// @dev The function that will set the value pointer. This will be callable
+  ///      at two different points in time:
+  ///      When the withdrawal lock is set and when the sale is over
+  function setPointer(){
+    require(((!allBucketsPoked) && (now >= self.endWithdrawalTime)) ||
+            ((!finalValueSet) && (now >= self.base.endTime)));
+
+    // use memory to save on sstore costs on every loop
+    uint256 _currentBucket = currentBucket;
+    uint256 _totalCommit = totalCommit;
+
+    if(_currentBucket == 0){
+      _currentBucket = self.highestCap;
+
+      // spend the 20,000 gas now to allow for lower predictable cost when low on gas
+      currentBucket = 1;
+      totalCommit = 1;
+    }
+
+    while((_currentBucket > endingBucket) && (msg.gas > LOWGASLIMIT)){
+      if(self.valueDelta[_currentBucket][1] == 0){
+        _totalCommit += self.valueDelta[_currentBucket][0];
+      } else {
+        // this can never be negative because all caps must be greater than mins
+        _totalCommit -= self.valueDelta[_currentBucket][1];
+      }
+      if((_totalCommit >= _currentBucket) && !pointerSet){
+        self.valuationPointer = _currentBucket;
+        pointerSet = true;
+
+        // if allBucketsPoked is true then this is the final run and value is committed
+        if(allBucketsPoked){
+          self.base.ownerBalance = _totalCommit;
+          totalCommit = _totalCommit;
+        }
+      }
+
+      if(pointerSet){
+        self.base.leftoverWei[msg.sender] += (FEE*self.valueDelta[_currentBucket][2]);
+      } else {
+        // only refund half fees for initial poking for buckets that will be reconsidered at final call
+        self.base.leftoverWei[msg.sender] += ((FEE*self.valueDelta[_currentBucket][2])/2);
+      }
+
+      _currentBucket = self.valuationsList.getAdjacent(_currentBucket, PREV);
+    }
+
+    // if we made it through all buckets
+    if(_currentBucket == _endingBucket){
+      currentBucket = 0;
+      if(!allBucketsPoked){
+        endingBucket = self.valuationsList.getAdjacent(self.valuationPointer, PREV);
+        allBucketsPoked = true;
+        pointerSet = false;
+      } else {
+        endingBucket = 0;
+        finalValueSet = true;
+      }
+    } else {
+      // we're low on gas, store and save
+      currentBucket = _currentBucket;
+      totalCommit = _totalCommit;
     }
   }
 
