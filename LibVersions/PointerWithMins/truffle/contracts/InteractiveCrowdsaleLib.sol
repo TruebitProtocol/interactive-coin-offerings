@@ -60,7 +60,7 @@ library InteractiveCrowdsaleLib {
     uint256 valuationCutoff;
 
     // pointer to the highest minimum value obtained
-    uint256 minimumCutoff
+    uint256 minimumCutoff;
 
     mapping (address => uint256) pricePurchasedAt;      // shows the price that the address purchased tokens at
 
