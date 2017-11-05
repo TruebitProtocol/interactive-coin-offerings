@@ -59,7 +59,7 @@ library InteractiveCrowdsaleLib {
     uint256 valuationGranularity;   // the granularity that valuations can be submitted at
 
     // pointer to the lowest personal valuation that can remain in the sale
-    uint256 valuationCutoff;
+    uint256 valuationPointer;
 
     // pointer to the highest minimum value obtained
     uint256 minimumCutoff;
@@ -347,8 +347,8 @@ library InteractiveCrowdsaleLib {
   }
 
   /// @dev If the address' personal valuation is below the valuationCutoff or
-  ///      personal minimum is more than the minimumCutoff, refund them all their ETH.
-  ///      If it is above the cutoff, calculate tokens purchased and refund leftoever ETH
+  ///      personal minimum is more than the minimumCutoff, refund them all of their ETH.
+  ///      If it is above the cutoff, calculate tokens purchased and refund leftover ETH
   /// @param self Stored crowdsale from crowdsale contract
   /// @return bool success if the contract runs successfully
   function retreiveFinalResult(InteractiveCrowdsaleStorage storage self) internal returns (bool) {
@@ -360,7 +360,7 @@ library InteractiveCrowdsaleLib {
     bool err;
 
     if ((self.personalMinAndValue[msg.sender][1] < self.valuationCutoff) ||
-        (sel.f.personalMinAndValue[msg.sender][0] > self.minimumCutoff)) {
+        (self.personalMinAndValue[msg.sender][0] > self.valuationCutoff)) {
 
       self.base.leftoverWei[msg.sender] += self.base.hasContributed[msg.sender];
     } else if (self.personalMinAndValue[msg.sender][1] == self.valuationCutoff) {
