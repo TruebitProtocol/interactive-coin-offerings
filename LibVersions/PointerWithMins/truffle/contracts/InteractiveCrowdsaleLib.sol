@@ -268,14 +268,14 @@ library InteractiveCrowdsaleLib {
 
     // if the delta is negative
     if(self.valueDelta[_personalMinimum][1] == 1){
-      self.valueDelta[_personalValuation][0] += _amount;
+      self.valueDelta[_personalMinimum][0] += _amount;
     } else {
       // if delta is positive and the new bid exceeds the delta, change the delta to negative
       if(_amount > self.valueDelta[_personalMinimum][0]){
-        self.valueDelta[_personalMinimum][0] = _amount - self.valueDelta[_personalValuation][0];
-        self.valueDelta[_personalValuation][1] = 1;
+        self.valueDelta[_personalMinimum][0] = _amount - self.valueDelta[_personalMinimum][0];
+        self.valueDelta[_personalMinimum][1] = 1;
       } else {
-        self.valueDelta[_personalValuation][0] -= _amount;
+        self.valueDelta[_personalMinimum][0] -= _amount;
       }
     }
 
@@ -314,48 +314,36 @@ library InteractiveCrowdsaleLib {
     // subtract the bidder's refund from its total contribution
     self.base.hasContributed[msg.sender] -= refundWei;
 
-    // subtract the bid from the sum of bids at this valuation
-    self.valuationSum[self.personalValuations[msg.sender]] -= refundWei;
-    self.minimumSum[self.personalValuations[msg.sender]] -= refundWei;
-    self.numBidsAtValuation[self.personalValuations[msg.sender]] -= 1;
+    // remove this bid from the buckets
 
-    if (self.personalMinAndValue[msg.sender][1] >= self.valuationCutoff) {
-      // subtract the bid from the balance of the owner
-      self.base.ownerBalance -= refundWei;
-      if(self.base.ownerBalance < self.minimumCutoff){
-        self.base.ownerBalance -= self.minimumSum[self.minimumCutoff];
-        while(self.base.ownerBalance < self.valuationCutoff) {
-          self.valuationCutoff = self.valuationsList.getAdjacent(self.valuationCutoff,PREV);
-          self.base.ownerBalance += self.valuationSums[self.valuationCutoff];
-        }
+    uint256 _personalValuation = self.personalMinAndValue[msg.sender][1];
+    uint256 _personalMinimum = self.personalMinAndValue[msg.sender][0];
 
-        bool _nodeExists;
-        uint256 _prevMin;
-        uint256 _nextMin;
-        (_nodeExists, _prevMin, _nextMin) = self.minimumsList.getNode(self.minimumCutoff);
-
-        while(self.base.ownerBalance < self.minimumCutoff){
-          self.base.ownerBalance -= self.minimumSum[_prevMin];
-          while(self.base.ownerBalance < self.valuationCutoff) {
-            self.valuationCutoff = self.valuationsList.getAdjacent(self.valuationCutoff,PREV);
-            self.base.ownerBalance += self.valuationSums[self.valuationCutoff];
-          }
-          (_nodeExists, _prevMin, _nextMin) = self.minimumsList.getNode(_prevMin);
-        }
-
-        self.minimumCutoff = _prevMin;
+    // if the delta is negative
+    if(self.valueDelta[_personalValuation][1] == 1){
+      self.valueDelta[_personalValuation][0] += _amount;
+    } else {
+      // if delta is positive and the removing bid exceeds the delta, change the delta to negative
+      if(_amount > self.valueDelta[_personalValuation][0]){
+        self.valueDelta[_personalValuation][0] = _amount - self.valueDelta[_personalValuation][0];
+        self.valueDelta[_personalValuation][1] = 1;
+      } else {
+        self.valueDelta[_personalValuation][0] -= _amount;
       }
     }
 
-    // remove the entry for this personal valuation if it is the last bid at this valuation to be finalized
-    if (self.numBidsAtValuation[self.personalValuations[msg.sender]] == 0) {
-      // Removing the entry from the linked list returns the key of the removed entry, so make sure that was succesful
-      assert(self.valuationsList.remove(self.personalValuations[msg.sender]) == self.personalValuations[msg.sender]);
+    // if the delta is positive
+    if(self.valueDelta[_personalMinimum][1] == 0){
+      self.valueDelta[_personalMinimum][0] += _amount;
+    } else {
+      // if delta is negative and the new bid exceeds the delta, change the delta to positive
+      if(_amount > self.valueDelta[_personalMinimum][0]){
+        self.valueDelta[_personalMinimum][0] = _amount - self.valueDelta[_personalMinimum][0];
+        self.valueDelta[_personalMinimum][1] = 0;
+      } else {
+        self.valueDelta[_personalMinimum][0] -= _amount;
+      }
     }
-
-    // NEED TO ADD SAME LOGIC FOR PERSONAL MINS
-    LogBidWithdrawn(msg.sender, self.base.hasContributed[msg.sender], self.personalValuations[msg.sender]);
-
   }
 
   /// @dev If the address' personal valuation is below the valuationCutoff or
