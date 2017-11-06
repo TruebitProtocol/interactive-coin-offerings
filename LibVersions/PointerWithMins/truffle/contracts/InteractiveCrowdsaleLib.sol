@@ -57,6 +57,8 @@ library InteractiveCrowdsaleLib {
 
     uint256 endWithdrawalTime;   // time when manual withdrawals are no longer allowed
     uint256 valuationGranularity;   // the granularity that valuations can be submitted at
+
+    // flags
     bool pointerSet;
     bool allBucketsPoked;
     bool finalValueSet;
@@ -176,7 +178,9 @@ library InteractiveCrowdsaleLib {
   /// @param self Stored crowdsale from crowdsale contract
   /// @param _amount amound of wei that the buyer is sending
   /// @param _personalValuation the total crowdsale valuation (wei) that the bidder is comfortable with
-  /// @param _listPredict prediction of where the valuation will go in the linked list
+  /// @param _valuePredict prediction of where the valuation will go in the linked list
+  /// @param _personalMinimum the crowdsale minimum (wei) that the bidder is comfortable with
+  /// @param _minPredict prediction of where the minimum valuation will go in the linked list
   /// @return true on succesful bid
   function submitBid(InteractiveCrowdsaleStorage storage self,
                      uint256 _amount,
@@ -206,7 +210,7 @@ library InteractiveCrowdsaleLib {
       require(_personalValuation > _amount);
     } else {
       // The personal valuation submitted must be greater than the current valuation plus the bid
-      require(_personalValuation >= self.valuationCutoff + _amount);
+      require(_personalValuation >= self.valuationPointer + _amount);
     }
     // personal valuations need to be in multiples of whatever the owner sets
     require((_personalValuation % self.valuationGranularity) == 0);
@@ -234,11 +238,11 @@ library InteractiveCrowdsaleLib {
     if(!self.valuationsList.nodeExists(_personalValuation)){
           _listSpot = self.valuationsList.getSortedSpot(_valuePredict,_personalValuation,NEXT);
           self.valuationsList.insert(_listSpot,_personalValuation,PREV);
-          if(_personalValuation > highestCap) highestCap = _personalValuation;
+          if(_personalValuation > self.highestCap) self.highestCap = _personalValuation;
     }
 
     if(!self.valuationsList.nodeExists(_personalMinimum)){
-      _listSpot = self.valuationsList.getSortedSpot(_valuePredict,_personalMinimum,NEXT);
+      _listSpot = self.valuationsList.getSortedSpot(_minPredict,_personalMinimum,NEXT);
       self.valuationsList.insert(_listSpot,_personalMinimum,PREV);
     }
 
@@ -290,6 +294,8 @@ library InteractiveCrowdsaleLib {
 
     // collect the fee from earlier
     self.valueDelta[_personalValuation][2]++;
+    // keep track of total bids at this personal cap
+    self.valuationSum[_personalValuation] += _amount;
 
     LogBidAccepted(msg.sender, _amount, _personalValuation, _personalMinimum);
 
@@ -305,23 +311,23 @@ library InteractiveCrowdsaleLib {
     // The sender has to have already bid on the sale
     require(self.personalMinAndValue[msg.sender][1] > 0);
 
-    uint256 refundWei;
+    uint256 _refundWei;
     // cannot withdraw after compulsory withdraw period is over unless the bid's valuation is below the cutoff
     if (now >= self.endWithdrawalTime) {
-      require(self.personalValuations[msg.sender] < self.valuationCutoff);
+      require(self.personalMinAndValue[msg.sender][1] < self.valuationPointer);
 
-      refundWei = self.base.hasContributed[msg.sender];
+      _refundWei = self.base.hasContributed[msg.sender];
 
     } else {
       uint256 multiplierPercent = (100*((self.endWithdrawalTime+self.base.milestoneTimes[0]) - now))/self.endWithdrawalTime;
-      refundWei = (multiplierPercent*self.base.hasContributed[msg.sender])/100;
+      _refundWei = (multiplierPercent*self.base.hasContributed[msg.sender])/100;
     }
 
     // Put the sender's contributed wei into the leftoverWei mapping for later withdrawal
-    self.base.leftoverWei[msg.sender] += refundWei;
+    self.base.leftoverWei[msg.sender] += _refundWei;
 
     // subtract the bidder's refund from its total contribution
-    self.base.hasContributed[msg.sender] -= refundWei;
+    self.base.hasContributed[msg.sender] -= _refundWei;
 
     // remove this bid from the buckets
 
@@ -330,69 +336,74 @@ library InteractiveCrowdsaleLib {
 
     // if the delta is negative
     if(self.valueDelta[_personalValuation][1] == 1){
-      self.valueDelta[_personalValuation][0] += _amount;
+      self.valueDelta[_personalValuation][0] += _refundWei;
     } else {
       // if delta is positive and the removing bid exceeds the delta, change the delta to negative
-      if(_amount > self.valueDelta[_personalValuation][0]){
-        self.valueDelta[_personalValuation][0] = _amount - self.valueDelta[_personalValuation][0];
+      if(_refundWei > self.valueDelta[_personalValuation][0]){
+        self.valueDelta[_personalValuation][0] = _refundWei - self.valueDelta[_personalValuation][0];
         self.valueDelta[_personalValuation][1] = 1;
       } else {
-        self.valueDelta[_personalValuation][0] -= _amount;
+        self.valueDelta[_personalValuation][0] -= _refundWei;
       }
     }
 
     // if the delta is positive
     if(self.valueDelta[_personalMinimum][1] == 0){
-      self.valueDelta[_personalMinimum][0] += _amount;
+      self.valueDelta[_personalMinimum][0] += _refundWei;
     } else {
       // if delta is negative and the new bid exceeds the delta, change the delta to positive
-      if(_amount > self.valueDelta[_personalMinimum][0]){
-        self.valueDelta[_personalMinimum][0] = _amount - self.valueDelta[_personalMinimum][0];
+      if(_refundWei > self.valueDelta[_personalMinimum][0]){
+        self.valueDelta[_personalMinimum][0] = _refundWei - self.valueDelta[_personalMinimum][0];
         self.valueDelta[_personalMinimum][1] = 0;
       } else {
-        self.valueDelta[_personalMinimum][0] -= _amount;
+        self.valueDelta[_personalMinimum][0] -= _refundWei;
       }
     }
+
+    self.valuationSum[_personalValuation] -= _refundWei;
+    return true;
   }
 
   /// @dev The function that will set the value pointer. This will be callable
   ///      at two different points in time:
   ///      When the withdrawal lock is set and when the sale is over
-  function setPointer(){
-    require(((!allBucketsPoked) && (now >= self.endWithdrawalTime)) ||
-            ((!finalValueSet) && (now >= self.base.endTime)));
+  /// @param self Stored crowdsale frowithdrawalm crowdsale contract
+  /// @return true on succesful
+  function setPointer(InteractiveCrowdsaleStorage storage self) public returns (bool){
+    require(((!self.allBucketsPoked) && (now >= self.endWithdrawalTime)) ||
+            ((!self.finalValueSet) && (now >= self.base.endTime)));
 
     // use memory to save on sstore costs on every loop
-    uint256 _currentBucket = currentBucket;
-    uint256 _totalCommit = totalCommit;
+    uint256 _currentBucket = self.currentBucket;
+    uint256 _totalCommit = self.totalCommit;
 
     if(_currentBucket == 0){
       _currentBucket = self.highestCap;
 
       // spend the 20,000 gas now to allow for lower predictable cost when low on gas
-      currentBucket = 1;
-      totalCommit = 1;
+      self.currentBucket = 1;
+      self.totalCommit = 1;
     }
 
-    while((_currentBucket > endingBucket) && (msg.gas > LOWGASLIMIT)){
+    while((_currentBucket > self.endingBucket) && (msg.gas > LOWGASLIMIT)){
       if(self.valueDelta[_currentBucket][1] == 0){
         _totalCommit += self.valueDelta[_currentBucket][0];
       } else {
         // this can never be negative because all caps must be greater than mins
         _totalCommit -= self.valueDelta[_currentBucket][1];
       }
-      if((_totalCommit >= _currentBucket) && !pointerSet){
+      if((_totalCommit >= _currentBucket) && !self.pointerSet){
         self.valuationPointer = _currentBucket;
-        pointerSet = true;
+        self.pointerSet = true;
 
         // if allBucketsPoked is true then this is the final run and value is committed
-        if(allBucketsPoked){
+        if(self.allBucketsPoked){
           self.base.ownerBalance = _totalCommit;
-          totalCommit = _totalCommit;
+          self.totalCommit = _totalCommit;
         }
       }
 
-      if(pointerSet){
+      if(self.pointerSet || self.allBucketsPoked){
         self.base.leftoverWei[msg.sender] += (FEE*self.valueDelta[_currentBucket][2]);
       } else {
         // only refund half fees for initial poking for buckets that will be reconsidered at final call
@@ -403,24 +414,26 @@ library InteractiveCrowdsaleLib {
     }
 
     // if we made it through all buckets
-    if(_currentBucket == _endingBucket){
-      currentBucket = 0;
-      if(!allBucketsPoked){
-        endingBucket = self.valuationsList.getAdjacent(self.valuationPointer, PREV);
-        allBucketsPoked = true;
-        pointerSet = false;
+    if(_currentBucket == self.endingBucket){
+      self.currentBucket = 0;
+      if(!self.allBucketsPoked){
+        self.endingBucket = self.valuationsList.getAdjacent(self.valuationPointer, PREV);
+        self.allBucketsPoked = true;
+        self.pointerSet = false;
       } else {
-        endingBucket = 0;
-        finalValueSet = true;
+        self.endingBucket = 0;
+        self.finalValueSet = true;
       }
+      return true;
     } else {
       // we're low on gas, store and save
-      currentBucket = _currentBucket;
-      totalCommit = _totalCommit;
+      self.currentBucket = _currentBucket;
+      self.totalCommit = _totalCommit;
+      return true;
     }
   }
 
-  /// @dev If the address' personal valuation is below the valuationCutoff or
+  /// @dev If the address' personal valuation is below the valuationPointer or
   ///      personal minimum is more than the minimumCutoff, refund them all of their ETH.
   ///      If it is above the cutoff, calculate tokens purchased and refund leftover ETH
   /// @param self Stored crowdsale from crowdsale contract
@@ -433,15 +446,15 @@ library InteractiveCrowdsaleLib {
     uint256 remainder;
     bool err;
 
-    if ((self.personalMinAndValue[msg.sender][1] < self.valuationCutoff) ||
-        (self.personalMinAndValue[msg.sender][0] > self.valuationCutoff)) {
+    if ((self.personalMinAndValue[msg.sender][1] < self.valuationPointer) ||
+        (self.personalMinAndValue[msg.sender][0] > self.valuationPointer)) {
 
       self.base.leftoverWei[msg.sender] += self.base.hasContributed[msg.sender];
-    } else if (self.personalMinAndValue[msg.sender][1] == self.valuationCutoff) {
+    } else if (self.personalMinAndValue[msg.sender][1] == self.valuationPointer) {
       uint256 q;
 
       // calculate the fraction of each minimal valuation bidders ether and tokens to refund
-      q = (100*(self.base.ownerBalance - self.valuationCutoff)/(self.valuationSums[self.valuationCutoff])) + 1;
+      q = (100*(self.base.ownerBalance - self.valuationPointer)/(self.valuationSum[self.valuationPointer])) + 1;
 
       // calculate the portion that this address has to take out of their bid
       uint256 refundAmount = (q*self.base.hasContributed[msg.sender])/100;
@@ -508,7 +521,7 @@ library InteractiveCrowdsaleLib {
   }
 
   function getPersonalValuation(InteractiveCrowdsaleStorage storage self, address _bidder) internal constant returns (uint256) {
-    return self.personalValuations[_bidder];
+    return self.personalMinAndValue[_bidder][1];
   }
 
   function getSaleData(InteractiveCrowdsaleStorage storage self, uint256 _timestamp) internal constant returns (uint256[3]) {

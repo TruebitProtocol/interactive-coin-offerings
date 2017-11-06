@@ -50,7 +50,11 @@ contract InteractiveCrowdsaleTestContract {
                      uint256 _valuePredict,
                      uint256 _personalMinimum,
                      uint256 _minPredict) payable public returns (bool) {
-    return sale.submitBid(msg.value, _personalValuation, _listPredict);
+    return sale.submitBid(msg.value,
+                          _personalValuation,
+                          _valuePredict,
+                          _personalMinimum,
+                          _minPredict);
   }
 
   function withdrawBid() public returns (bool) {
@@ -63,6 +67,10 @@ contract InteractiveCrowdsaleTestContract {
 
   function withdrawLeftoverWei() public returns (bool) {
     return sale.withdrawLeftoverWei();
+  }
+
+  function setPointer() public returns (bool) {
+    return sale.setPointer();
   }
 
   function withdrawOwnerEth() returns (bool) {
