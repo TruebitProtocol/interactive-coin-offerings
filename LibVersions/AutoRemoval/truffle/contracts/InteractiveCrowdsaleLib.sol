@@ -9,16 +9,15 @@ pragma solidity ^0.4.15;
  * The MIT License (MIT)
  * https://github.com/Majoolr/ethereum-libraries/blob/master/LICENSE
  *
- * The InteractiveCrowdsale Library provides functionality to create a initial coin offering
- * for a standard token sale with high supply where there is a direct ether to
- * token transfer.
+ * The InteractiveCrowdsale Library provides functionality to create a crowdsale
+ * based on the white paper initially proposed by Jason Teutsch and Vitalik
+ * Buterin. See https://people.cs.uchicago.edu/~teutsch/papers/ico.pdf for
+ * further information.
  *
- * Majoolr provides smart contract services and security reviews for contract
- * deployments in addition to working on open source projects in the Ethereum
- * community. Our purpose is to test, document, and deploy reusable code onto the
- * blockchain and improve both security and usability. We also educate non-profits,
- * schools, and other community members about the application of blockchain
- * technology. For further information: majoolr.io
+ * This library was developed in a collaborative effort among many organizations
+ * including TrueBit, Majoolr, Zeppelin, and Consensys.
+ * For further information: truebit.io, majoolr.io, zeppelin.solutions,
+ * consensys.net
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
  * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
@@ -279,7 +278,7 @@ library InteractiveCrowdsaleLib {
 
             // refund the bidder's contribution
             self.base.leftoverWei[refundAddress] += self.base.hasContributed[refundAddress];
-            
+
             // subtract the bid from the balance of the owner (total valuation)
             self.base.ownerBalance -= self.base.hasContributed[refundAddress];
 
@@ -309,7 +308,7 @@ library InteractiveCrowdsaleLib {
             refundAddress = self.valuationAddresses[lowestValuation][i];
             // calculate the portion that this address has to take out of their bid
             uint256 refundAmount = (q*self.base.hasContributed[refundAddress])/100;
-            
+
             // subtract that amount from the total valuation
             self.base.ownerBalance -= refundAmount;
 
