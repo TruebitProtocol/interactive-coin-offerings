@@ -1,0 +1,605 @@
+{
+  "contract_name": "InteractiveCrowdsaleTestContract",
+  "abi": [
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "crowdsaleActive",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "withdrawOwnerEth",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_buyer",
+          "type": "address"
+        }
+      ],
+      "name": "getContribution",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "crowdsaleEnded",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "withdrawBid",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getEndWithdrawlTime",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_buyer",
+          "type": "address"
+        }
+      ],
+      "name": "getLeftoverWei",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getEndTime",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "setTokens",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getTokensPerEth",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "setPointer",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getTotalValuation",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "name": "getSaleData",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256[3]"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getOwner",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "withdrawTokens",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "withdrawLeftoverWei",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_bidder",
+          "type": "address"
+        }
+      ],
+      "name": "getPersonalValuation",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getPercentBurn",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getStartTime",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_exchangeRate",
+          "type": "uint256"
+        }
+      ],
+      "name": "setTokenExchangeRate",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_personalValuation",
+          "type": "uint256"
+        },
+        {
+          "name": "_valuePredict",
+          "type": "uint256"
+        },
+        {
+          "name": "_personalMinimum",
+          "type": "uint256"
+        },
+        {
+          "name": "_minPredict",
+          "type": "uint256"
+        }
+      ],
+      "name": "submitBid",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": true,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getCapAmount",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getExchangeRate",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getTokensSold",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_buyer",
+          "type": "address"
+        }
+      ],
+      "name": "getTokenPurchase",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "name": "saleData",
+          "type": "uint256[]"
+        },
+        {
+          "name": "fallbackExchangeRate",
+          "type": "uint256"
+        },
+        {
+          "name": "capAmountInCents",
+          "type": "uint256"
+        },
+        {
+          "name": "valuationGranularity",
+          "type": "uint256"
+        },
+        {
+          "name": "endWithdrawalTime",
+          "type": "uint256"
+        },
+        {
+          "name": "endTime",
+          "type": "uint256"
+        },
+        {
+          "name": "percentBurn",
+          "type": "uint8"
+        },
+        {
+          "name": "token",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "constructor"
+    },
+    {
+      "payable": false,
+      "type": "fallback"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "bidder",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "personalValuation",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "personalMinimum",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogBidAccepted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "bidder",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "personalValuation",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogBidWithdrawn",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "bidder",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "personalValuation",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogBidRemoved",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "Msg",
+          "type": "string"
+        }
+      ],
+      "name": "LogErrorMsg",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "Msg",
+          "type": "string"
+        }
+      ],
+      "name": "LogTokenPriceChange",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "_bidder",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "Amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogTokensWithdrawn",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "_bidder",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "Amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogWeiWithdrawn",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "Msg",
+          "type": "string"
+        }
+      ],
+      "name": "LogOwnerEthWithdrawn",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "_buyer",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "value",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "Msg",
+          "type": "string"
+        }
+      ],
+      "name": "LogNoticeMsg",
+      "type": "event"
+    }
+  ],
+  "unlinked_binary": "0x6060604052341561000f57600080fd5b60405161138f38038061138f83398101604052808051919060200180518201919060200180519190602001805191906020018051919060200180519190602001805191906020018051919060200180519150505b73__InteractiveCrowdsaleLib_______________6385947dc260008b8b8b8b8b8b8b8b8b6040518b63ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401808b81526020018a600160a060020a0316600160a060020a03168152602001806020018981526020018881526020018781526020018681526020018581526020018460ff1660ff16815260200183600160a060020a0316600160a060020a0316815260200182810382528a818151815260200191508051906020019060200280838360005b838110156101545780820151818401525b60200161013b565b505050509050019b50505050505050505050505060006040518083038186803b151561017f57600080fd5b6102c65a03f4151561019057600080fd5b5050505b5050505050505050505b6111e2806101ad6000396000f3006060604052361561012d5763ffffffff60e060020a6000350416630b87cf10811461013c5780630c1ca1ba1461016357806321eff7fc1461018a5780632367f35d146101bb57806337271cc7146101e25780633dc3a55114610209578063413100e01461022e578063439f5ac21461025f578063559ed339146102845780636893f63f146102ab5780637f192100146102d05780638467456b146102f757806386630b7b1461031c578063893d20e81461036b5780638d8f2adb1461039a5780639fac6ddc146103c1578063b00d33b2146103e8578063bdf1211e14610419578063c828371e1461043e578063cb7b867314610463578063d793139e1461048d578063d8ad1c5c146104b5578063e6aa216c146104da578063ee7c0db0146104ff578063f59ae82c14610524575b341561013857600080fd5b5b5b005b341561014757600080fd5b61014f610555565b604051901515815260200160405180910390f35b341561016e57600080fd5b61014f610567565b604051901515815260200160405180910390f35b341561019557600080fd5b6101a9600160a060020a0360043516610579565b60405190815260200160405180910390f35b34156101c657600080fd5b61014f610598565b604051901515815260200160405180910390f35b34156101ed57600080fd5b61014f6105aa565b604051901515815260200160405180910390f35b341561021457600080fd5b6101a9610623565b60405190815260200160405180910390f35b341561023957600080fd5b6101a9600160a060020a036004351661062a565b60405190815260200160405180910390f35b341561026a57600080fd5b6101a9610649565b60405190815260200160405180910390f35b341561028f57600080fd5b61014f610650565b604051901515815260200160405180910390f35b34156102b657600080fd5b6101a9610662565b60405190815260200160405180910390f35b34156102db57600080fd5b61014f610669565b604051901515815260200160405180910390f35b341561030257600080fd5b6101a96106e2565b60405190815260200160405180910390f35b341561032757600080fd5b6103326004356106e9565b6040518082606080838360005b838110156103585780820151818401525b60200161033f565b5050505090500191505060405180910390f35b341561037657600080fd5b61037e61070a565b604051600160a060020a03909116815260200160405180910390f35b34156103a557600080fd5b61014f61071a565b604051901515815260200160405180910390f35b34156103cc57600080fd5b61014f61072c565b604051901515815260200160405180910390f35b34156103f357600080fd5b6101a9600160a060020a036004351661073e565b60405190815260200160405180910390f35b341561042457600080fd5b6101a9610758565b60405190815260200160405180910390f35b341561044957600080fd5b6101a9610768565b60405190815260200160405180910390f35b341561046e57600080fd5b61014f60043561076f565b604051901515815260200160405180910390f35b61014f6004356024356044356064356107f0565b604051901515815260200160405180910390f35b34156104c057600080fd5b6101a9610892565b60405190815260200160405180910390f35b34156104e557600080fd5b6101a9610899565b60405190815260200160405180910390f35b341561050a57600080fd5b6101a96108a0565b60405190815260200160405180910390f35b341561052f57600080fd5b6101a9600160a060020a03600435166108b2565b60405190815260200160405180910390f35b600061056160006108d1565b90505b90565b6000610561600061094c565b90505b90565b600160a060020a0381166000908152600b60205260409020545b919050565b600061056160006109c7565b90505b90565b600073__InteractiveCrowdsaleLib_______________630671860482806040516020015260405160e060020a63ffffffff8416028152600481019190915260240160206040518083038186803b151561060357600080fd5b6102c65a03f4151561061457600080fd5b50505060405180519150505b90565b6011545b90565b600160a060020a0381166000908152600d60205260409020545b919050565b6004545b90565b60006105616000610a42565b90505b90565b6001545b90565b600073__InteractiveCrowdsaleLib_______________6373bfedc782806040516020015260405160e060020a63ffffffff8416028152600481019190915260240160206040518083038186803b151561060357600080fd5b6102c65a03f4151561061457600080fd5b50505060405180519150505b90565b6006545b90565b6106f161118f565b61070260008363ffffffff610abd16565b90505b919050565b600054600160a060020a03165b90565b60006105616000610b4a565b90505b90565b60006105616000610be1565b90505b90565b6000610702818363ffffffff610c7516565b90505b919050565b60095462010000900460ff165b90565b6003545b90565b600073__InteractiveCrowdsaleLib_______________63a4f21cb78284816040516020015260405160e060020a63ffffffff85160281526004810192909252602482015260440160206040518083038186803b15156107ce57600080fd5b6102c65a03f415156107df57600080fd5b50505060405180519150505b919050565b600073__InteractiveCrowdsaleLib_______________6325d92f5e823488888888856040516020015260405160e060020a63ffffffff89160281526004810196909652602486019490945260448501929092526064840152608483015260a482015260c40160206040518083038186803b151561086d57600080fd5b6102c65a03f4151561087e57600080fd5b50505060405180519150505b949350505050565b6002545b90565b6005545b90565b60006105616000610ca1565b90505b90565b600160a060020a0381166000908152600c60205260409020545b919050565b600073__CrowdsaleLib__________________________636eee0e9283836040516020015260405160e060020a63ffffffff8416028152600481019190915260240160206040518083038186803b15156107ce57600080fd5b6102c65a03f415156107df57600080fd5b50505060405180519150505b919050565b600073__CrowdsaleLib__________________________63d34e327483836040516020015260405160e060020a63ffffffff8416028152600481019190915260240160206040518083038186803b15156107ce57600080fd5b6102c65a03f415156107df57600080fd5b50505060405180519150505b919050565b600073__CrowdsaleLib__________________________6310bc04e783836040516020015260405160e060020a63ffffffff8416028152600481019190915260240160206040518083038186803b15156107ce57600080fd5b6102c65a03f415156107df57600080fd5b50505060405180519150505b919050565b600073__CrowdsaleLib__________________________633617dbba83836040516020015260405160e060020a63ffffffff8416028152600481019190915260240160206040518083038186803b15156107ce57600080fd5b6102c65a03f415156107df57600080fd5b50505060405180519150505b919050565b610ac561118f565b73__CrowdsaleLib__________________________63d7bc0959848460006040516060015260405160e060020a63ffffffff85160281526004810192909252602482015260440160606040518083038186803b1515610b2357600080fd5b6102c65a03f41515610b3457600080fd5b5050506040518060600160405290505b92915050565b60048101546000904211610b5d57600080fd5b610b6682610d1c565b5073__CrowdsaleLib__________________________63b5d881638360006040516020015260405160e060020a63ffffffff8416028152600481019190915260240160206040518083038186803b15156107ce57600080fd5b6102c65a03f415156107df57600080fd5b50505060405180519150505b919050565b6004810154600090421115610bfb57610bf982610d1c565b505b73__CrowdsaleLib__________________________63d06f9a5e8360006040516020015260405160e060020a63ffffffff8416028152600481019190915260240160206040518083038186803b15156107ce57600080fd5b6102c65a03f415156107df57600080fd5b50505060405180519150505b919050565b600160a060020a0381166000908152601e83016020526040812060015b0160005b505490505b92915050565b600073__CrowdsaleLib__________________________6319c5f76b83836040516020015260405160e060020a63ffffffff8416028152600481019190915260240160206040518083038186803b15156107ce57600080fd5b6102c65a03f415156107df57600080fd5b50505060405180519150505b919050565b600080600080600080866000016004015442111515610d3a57600080fd5b600160a060020a0333166000908152600b8801602052604081205411610d5f57600080fd5b6017870154600160a060020a0333166000908152601e89016020526040902060015b0160005b50541080610db757506017870154600160a060020a0333166000908152601e890160205260408120905b0160005b5054115b15610df057600160a060020a0333166000908152600b88016020908152604080832054600d8b0190925290912080549091019055610eac565b6017870154600160a060020a0333166000908152601e89016020526040902060015b0160005b50541415610eac5760178701546000818152601a89016020526040902054600689015490916064910302811515610e4957fe5b33600160a060020a03166000908152600b8a016020526040902054919004600101925060649083025b600160a060020a0333166000908152600d8a0160209081526040808320805495909404948501909355600b8b019052208054829003905590505b5b600160a060020a0333166000908152600b8801602090815260408083205460198b0190925290912054610ee1918991610fcf565b600160a060020a033381166000908152600c8b0160205260408082208054860190558b5490921681528181205493985091965073__BasicMathLib__________________________9263f4f3bdc1929091899190516040015260405160e060020a63ffffffff851602815260048101929092526024820152604401604080518083038186803b1515610f7257600080fd5b6102c65a03f41515610f8357600080fd5b50505060405180519060200180519550909350508215610fa257600080fd5b8654600160a060020a03166000908152600c880160205260409020849055600195505b5050505050919050565b600080808080808073__BasicMathLib__________________________631d3b9edf8a8a846040516040015260405160e060020a63ffffffff851602815260048101929092526024820152604401604080518083038186803b151561103357600080fd5b6102c65a03f4151561104457600080fd5b505050604051805190602001805191935090915050811561106457600080fd5b60098a0154601261010090910460ff16116110af5760098a0154610100900460ff16601203600a0a9450848181151561109957fe5b04925084818115156110a757fe5b069350611152565b60098a0154610100900460ff1660111901600a0a945073__BasicMathLib__________________________631d3b9edf828760006040516040015260405160e060020a63ffffffff851602815260048101929092526024820152604401604080518083038186803b151561112257600080fd5b6102c65a03f4151561113357600080fd5b5050506040518051906020018051945090925050811561115257600080fd5b5b8954600160a060020a03166000908152600c8b01602052604090205483111561117b57600080fd5b8284965096505b5050505050935093915050565b60606040519081016040526003815b600081526020019060019003908161119e57905050905600a165627a7a72305820849d979266f8611a2b0c1c3040e392e66b213e932d47daa4456692074cd3b6b90029",
+  "networks": {},
+  "schema_version": "0.0.5",
+  "updated_at": 1509929307779
+}
