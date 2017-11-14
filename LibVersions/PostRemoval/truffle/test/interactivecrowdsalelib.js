@@ -1,21 +1,73 @@
-// const TimeInteractiveCrowdsaleTestContract = artifacts.require("TimeInteractiveCrowdsaleTestContract");
-// const CrowdsaleToken = artifacts.require("CrowdsaleToken");
-//
-// contract('CrowdsaleToken', (accounts) => {
-//   it("should properly initialize token data", async () => {
-//
-//     const c = await CrowdsaleToken.deployed();
-//     const name = await c.name.call();
-//     const symbol = await c.symbol.call();
-//     const decimals = await c.decimals.call();
-//     const totalSupply = await c.totalSupply.call();
-//
-//     assert.equal(name.valueOf(), 'Tester Token', "Name should be set to Tester Token.");
-//     assert.equal(symbol.valueOf(), 'TST', "Symbol should be set to TST.");
-//     assert.equal(decimals.valueOf(), 18, "Decimals should be set to 18.");
-//     assert.equal(totalSupply.valueOf(), 20000000000000000000000000, "Total supply should reflect 20000000000000000000.");
-//   });
-// });
+import {advanceBlock} from './helpers/advanceToBlock'
+import {increaseTimeTo, duration} from './helpers/increaseTime'
+import latestTime from './helpers/latestTime'
+const { should } = require('./helpers/utils')
+const CrowdsaleToken = artifacts.require("CrowdsaleToken");
+const InteractiveCrowdsaleTestContract = artifacts.require("InteractiveCrowdsaleTestContract");
+
+contract('InteractiveCrowdsaleTestContract', function (accounts) {
+    let sale
+    let startTime
+
+    before(async function() {
+        //Advance to the next block to correctly read time in the solidity "now" function interpreted by testrpc
+        await advanceBlock()
+    })
+
+    beforeEach(async function () {
+      startTime = latestTime() + duration.weeks(7)
+      this.endTime =   this.startTime + duration.years(2)
+      this.afterEndTime = this.endTime + duration.seconds(1)
+
+
+      sale = await InteractiveCrowdsaleTestContract.deployed()
+
+      //this.token = CrowdsaleToken.at(await sale.token())
+    })
+
+    // beforeEach(async () => {
+    //   sale = await InteractiveCrowdsaleTestContract.deployed()
+    // })
+
+    it('has the correct owner', async () => {
+      const owner = await sale.getOwner()
+      owner.should.be.equal(accounts[5])
+    })
+
+    it('has the correct exchange rate', async () => {
+      const rate = await sale.getExchangeRate()
+      rate.should.be.bignumber.equal(29000)
+    })
+
+    it('has the correct minimum raise', async () => {
+      const raise = await sale.getMinimumRaise()
+      raise.should.be.bignumber.equal(10000000)
+    })
+
+    it('has the correct cap Amount', async () => {
+      const amount = await sale.getCapAmount()
+      amount.should.be.bignumber.equal(5.8621e+22)
+    })
+
+    it('has the correct valuation granularity', async () => {
+      const gran = await sale.getValuationGranularity()
+      gran.should.be.bignumber.equal(100000)
+    })
+
+    /// CHECK THE REST OF THE INITIALIZATION
+
+
+    it('should accept a bid', async () => {
+        await increaseTimeTo(startTime)
+        await sale.submitBid(100000000,0,{from:accounts[0],value:1000000})
+        const cont = sale.getContribution(accounts[0])
+        cont.should.be.bignumber.equal(1000000)
+    })
+
+
+});
+
+
 //
 // /*************************************************************************
 //
