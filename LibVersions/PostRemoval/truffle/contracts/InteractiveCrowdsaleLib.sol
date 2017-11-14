@@ -55,6 +55,8 @@ library InteractiveCrowdsaleLib {
 
     uint256 valuationCutoff;        // pointer to the lowest personal valuation that can remain in the sale
 
+    uint256 minimumRaise;           // minimim amount that the sale needs to make to be successfull
+
     mapping (address => uint256) pricePurchasedAt;      // shows the price that the address purchased tokens at
 
     mapping (uint256 => uint256) valuationSums;         // the sums of bids at each valuation
@@ -94,6 +96,7 @@ library InteractiveCrowdsaleLib {
                 address _owner,
                 uint256[] _saleData,
                 uint256 _fallbackExchangeRate,
+                uint256 _minimumRaise,
                 uint256 _capAmountInCents,
                 uint256 _valuationGranularity,
                 uint256 _endWithdrawalTime,
@@ -110,6 +113,9 @@ library InteractiveCrowdsaleLib {
                 _token);
 
     require(_endWithdrawalTime < _endTime);
+    require(_minimumRaise > 0);
+    require(_minimumRaise < _capAmountInCents);
+    self.minimumRaise = _minimumRaise;
     self.valuationGranularity = _valuationGranularity;
     self.endWithdrawalTime = _endWithdrawalTime;
   }
@@ -120,9 +126,10 @@ library InteractiveCrowdsaleLib {
   /// @param _price price of tokens in the sale, in tokens/ETH
   /// @return uint256 numTokens the number of tokens purchased
   /// @return remainder  any remaining wei leftover from integer division
-  function calculateTokenPurchase(InteractiveCrowdsaleStorage storage self, uint256 _amount, uint256 _price) internal returns (uint256,uint256) {
+  function calculateTokenPurchase(InteractiveCrowdsaleStorage storage self, uint256 _amount, uint256 _price) internal view returns (uint256,uint256) {
     uint256 zeros; //for calculating token
     uint256 remainder = 0; //temp calc holder for division remainder for leftover wei
+    
     bool err;
     uint256 result;
     uint256 numTokens;
@@ -150,9 +157,12 @@ library InteractiveCrowdsaleLib {
   /// @param self Stored crowdsale from crowdsale contract
   /// @param _amount amound of wei that the buyer is sending
   /// @param _personalValuation the total crowdsale valuation (wei) that the bidder is comfortable with
-  /// @param _listPredict prediction of where the valuation will go in the linked list
+  /// @param _valuePredict prediction of where the valuation will go in the linked list
   /// @return true on succesful bid
-  function submitBid(InteractiveCrowdsaleStorage storage self, uint256 _amount, uint256 _personalValuation, uint256 _listPredict) returns (bool) {
+  function submitBid(InteractiveCrowdsaleStorage storage self, 
+                      uint256 _amount, 
+                      uint256 _personalValuation, 
+                      uint256 _valuePredict) returns (bool) {
     require(msg.sender != self.base.owner);
     require(self.base.validPurchase());
     require(self.personalValuations[msg.sender] == 0 && self.base.hasContributed[msg.sender] == 0);   // bidder can't have already bid
@@ -180,9 +190,11 @@ library InteractiveCrowdsaleLib {
     }
 
     // add the bid to the sorted valuations list
-    uint256 listSpot;
-    listSpot = self.valuationsList.getSortedSpot(_listPredict,_personalValuation,NEXT);
-    self.valuationsList.insert(listSpot,_personalValuation,PREV);
+    uint256 _listSpot;
+    if(!self.valuationsList.nodeExists(_personalValuation)){
+        _listSpot = self.valuationsList.getSortedSpot(_valuePredict,_personalValuation,NEXT);
+        self.valuationsList.insert(_listSpot,_personalValuation,PREV);
+    }
 
     // add the valuation to the address => valuations mapping
     self.personalValuations[msg.sender] = _personalValuation;
@@ -278,9 +290,16 @@ library InteractiveCrowdsaleLib {
     uint256 remainder;
     bool err;
 
+    if (self.base.ownerBalance < self.minimumRaise) {
+      self.base.leftoverWei[msg.sender] += self.base.hasContributed[msg.sender];
+      return true;
+    }
+
     if (self.personalValuations[msg.sender] < self.valuationCutoff) {
 
       self.base.leftoverWei[msg.sender] += self.base.hasContributed[msg.sender];
+      return true;
+
     } else if (self.personalValuations[msg.sender] == self.valuationCutoff) {
       uint256 q;
 

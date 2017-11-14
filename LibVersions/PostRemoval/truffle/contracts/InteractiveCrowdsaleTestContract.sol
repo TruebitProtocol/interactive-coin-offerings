@@ -18,6 +18,7 @@ contract InteractiveCrowdsaleTestContract {
     address owner,
     uint256[] saleData,
     uint256 fallbackExchangeRate,
+    uint256 minimumRaise,
     uint256 capAmountInCents,
     uint256 valuationGranularity,
     uint256 endWithdrawalTime,
@@ -25,7 +26,7 @@ contract InteractiveCrowdsaleTestContract {
     uint8 percentBurn,
     CrowdsaleToken token)
   {
-  	sale.init(owner, saleData, fallbackExchangeRate, capAmountInCents, valuationGranularity, endWithdrawalTime, endTime, percentBurn, token);
+  	sale.init(owner, saleData, fallbackExchangeRate, minimumRaise, capAmountInCents, valuationGranularity, endWithdrawalTime, endTime, percentBurn, token);
   }
 
   // fallback function can be used to buy tokens
@@ -71,6 +72,14 @@ contract InteractiveCrowdsaleTestContract {
 
   function getOwner() constant returns (address) {
     return sale.base.owner;
+  }
+
+  function getMinimumRaise() constant returns (uint256) {
+    return sale.minimumRaise;
+  }
+
+  function getValuationGranularity() constant returns (uint256) {
+    return sale.valuationGranularity;
   }
 
   function getTokensPerEth() constant returns (uint256) {
