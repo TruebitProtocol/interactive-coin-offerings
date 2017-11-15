@@ -255,12 +255,11 @@ library InteractiveCrowdsaleLib {
             self.base.hasContributed[msg.sender] == 0);
 
     bool err;
-    bool success;
 
     // Prior to withdrawal lock fees are collected to calculate pointer at withdrawal lock.
     // Need to check for bonus price changes, and _personalCap only needs to
     // be greater than the bid amount.
-    if(now < endWithdrawalTime){
+    if(now < self.endWithdrawalTime){
       // Fee is 63 Szabo calculated as follows:
       // fee pays for pointer to add or subtract bid value to/from the value
       // pointer, clears fee, and moves to the next bucket. Gas is +3 for add/subtract
@@ -327,10 +326,11 @@ library InteractiveCrowdsaleLib {
     self.base.hasContributed[msg.sender] += _amount;
     self.pricePurchasedAt[msg.sender] = self.base.tokensPerEth;
 
-    success = self.setBucketValue(_amount, _personalCap, _personalMinimum, false);
-    assert(success);
+    // forced reuse of err due to deep call stack
+    err = !(setBucketValue(self, _amount, _personalCap, _personalMinimum, false));
+    assert(!err);
     // if we are prior to the withdrawal lock
-    if(now >= endWithdrawalTime){
+    if(now >= self.endWithdrawalTime){
       // the pointer has to be set after withdrawal lock before sale can proceed
       require(self.allBucketsPoked);
 
@@ -349,7 +349,7 @@ library InteractiveCrowdsaleLib {
         // prepare to move the pointer by subtracting the current valuation bucket's
         // personal cap bids. The reason being that these bids will be eliminated
         // from the sale if the pointer moves up in valuation.
-        _proposedCommit = self.valueCommitted - self.valueMinAndCap[_self.valuationPointer][1];
+        _proposedCommit = self.valueCommitted - self.valueMinAndCap[self.valuationPointer][1];
 
         // move the pointer up to the next bucket
         _currentBucket = self.valuationsList.getAdjacent(self.valuationPointer, NEXT);
@@ -421,10 +421,10 @@ library InteractiveCrowdsaleLib {
     self.base.hasContributed[msg.sender] -= _refundWei;
 
     // remove this bid from the buckets
-    bool success = self.setBucketValue(_refundWei,
-                                       self.personalMinAndCap[msg.sender][1],
-                                       self.personalMinAndCap[msg.sender][0],
-                                       true);
+    bool success = setBucketValue(self, _refundWei,
+                                  self.personalMinAndCap[msg.sender][1],
+                                  self.personalMinAndCap[msg.sender][0],
+                                  true);
     assert(success);
 
     return true;
@@ -446,7 +446,7 @@ library InteractiveCrowdsaleLib {
 
       // spend the 20,000 gas now to allow for lower predictable cost when low on gas
       self.currentBucket = 1;
-      self.totalCommit = 1;
+      self.valueCommitted = 1;
     }
 
     // while we have enough gas, waterfall down all buckets to find value equilibrium

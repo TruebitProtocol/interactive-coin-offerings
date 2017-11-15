@@ -19,13 +19,12 @@ contract InteractiveCrowdsaleTestContract {
     uint256[] saleData,
     uint256 fallbackExchangeRate,
     uint256 capAmountInCents,
-    uint256 valuationGranularity,
     uint256 endWithdrawalTime,
     uint256 endTime,
     uint8 percentBurn,
     CrowdsaleToken token)
   {
-  	sale.init(owner, saleData, fallbackExchangeRate, capAmountInCents, valuationGranularity, endWithdrawalTime, endTime, percentBurn, token);
+  	sale.init(owner, saleData, fallbackExchangeRate, capAmountInCents, endWithdrawalTime, endTime, percentBurn, token);
   }
 
   // Migrate Events from Libs for contract web3 object
