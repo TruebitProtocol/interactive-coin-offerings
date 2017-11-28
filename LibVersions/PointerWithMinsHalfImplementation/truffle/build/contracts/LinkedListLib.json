@@ -1,8 +1,0 @@
-{
-  "contract_name": "LinkedListLib",
-  "abi": [],
-  "unlinked_binary": "0x60606040523415600e57600080fd5b5b603680601c6000396000f30060606040525b600080fd00a165627a7a7230582014689c4d29db6bd5931e44349a85d1caea153bf97bb74fc9580ef1672f67fb960029",
-  "networks": {},
-  "schema_version": "0.0.5",
-  "updated_at": 1509929403146
-}
