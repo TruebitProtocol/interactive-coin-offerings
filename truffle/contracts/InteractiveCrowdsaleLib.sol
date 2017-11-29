@@ -111,7 +111,7 @@ library InteractiveCrowdsaleLib {
                 uint256 _endWithdrawalTime,
                 uint256 _endTime,
                 uint8 _percentBurn,
-                CrowdsaleToken _token)
+                CrowdsaleToken _token) public
   {
     self.base.init(_owner,
                 _saleData,
@@ -158,7 +158,6 @@ library InteractiveCrowdsaleLib {
     uint256 remainder = 0; //temp calc holder for division remainder for leftover wei
 
     bool err;
-    uint256 result;
     uint256 numTokens;
     uint256 weiTokens; //temp calc holder
     uint256 leftoverWei; //wei change for purchaser
@@ -243,13 +242,15 @@ library InteractiveCrowdsaleLib {
 
     uint256 proposedCommit;
     uint256 currentBucket;
+    bool exists;
     // prepare to move the pointer by subtracting the current valuation bucket's
     // personal cap bids. The reason being that these bids will be eliminated
     // from the sale if the pointer moves up in valuation.
     proposedCommit = self.valueCommitted - self.valuationSums[self.valuationPointer];
 
     // move the pointer up to the next bucket
-    currentBucket = self.valuationsList.getAdjacent(self.valuationPointer, NEXT);
+    (exists,currentBucket) = self.valuationsList.getAdjacent(self.valuationPointer, NEXT);
+    require(exists);
 
     // test to see if we can move up in valuation
     while(currentBucket < proposedCommit){
@@ -257,7 +258,7 @@ library InteractiveCrowdsaleLib {
       self.valueCommitted = proposedCommit;
 
       proposedCommit = self.valueCommitted - self.valuationSums[currentBucket];
-      currentBucket = self.valuationsList.getAdjacent(self.valuationPointer, NEXT);
+      (exists,currentBucket) = self.valuationsList.getAdjacent(self.valuationPointer, NEXT);
     }
     self.pricePurchasedAt[msg.sender] = self.base.tokensPerEth;
     LogBidAccepted(msg.sender, _amount, _personalCap);
@@ -301,12 +302,14 @@ library InteractiveCrowdsaleLib {
 
     uint256 proposedCommit;
     uint256 currentBucket;
+    bool exists;
 
     // prepare to move the pointer by adding the previous valuation bucket's
     // personal cap bids. The reason being that these bids will be added
     // back to the sale if the pointer moves down in valuation.
     // move the pointer up to the next bucket
-    currentBucket = self.valuationsList.getAdjacent(self.valuationPointer, PREV);
+    (exists,currentBucket) = self.valuationsList.getAdjacent(self.valuationPointer, PREV);
+    require(exists);
 
     proposedCommit = self.valueCommitted + self.valuationSums[currentBucket];
 
@@ -315,7 +318,7 @@ library InteractiveCrowdsaleLib {
       self.valuationPointer = currentBucket;
       self.valueCommitted = proposedCommit;
 
-      currentBucket = self.valuationsList.getAdjacent(self.valuationPointer, PREV);
+      (exists,currentBucket) = self.valuationsList.getAdjacent(self.valuationPointer, PREV);
       proposedCommit = self.valueCommitted + self.valuationSums[currentBucket];
     }
 
@@ -397,7 +400,7 @@ library InteractiveCrowdsaleLib {
 
    /*Functions "inherited" from CrowdsaleLib library*/
 
-  function setTokenExchangeRate(InteractiveCrowdsaleStorage storage self, uint256 _exchangeRate) returns (bool) {
+  function setTokenExchangeRate(InteractiveCrowdsaleStorage storage self, uint256 _exchangeRate) public returns (bool) {
     return self.base.setTokenExchangeRate(_exchangeRate);
   }
 
@@ -426,23 +429,23 @@ library InteractiveCrowdsaleLib {
     return self.base.withdrawOwnerEth();
   }
 
-  function crowdsaleActive(InteractiveCrowdsaleStorage storage self) internal constant returns (bool) {
+  function crowdsaleActive(InteractiveCrowdsaleStorage storage self) internal view returns (bool) {
     return self.base.crowdsaleActive();
   }
 
-  function crowdsaleEnded(InteractiveCrowdsaleStorage storage self) internal constant returns (bool) {
+  function crowdsaleEnded(InteractiveCrowdsaleStorage storage self) internal view returns (bool) {
     return self.base.crowdsaleEnded();
   }
 
-  function getPersonalCap(InteractiveCrowdsaleStorage storage self, address _bidder) internal constant returns (uint256) {
+  function getPersonalCap(InteractiveCrowdsaleStorage storage self, address _bidder) internal view returns (uint256) {
     return self.personalCaps[_bidder];
   }
 
-  function getSaleData(InteractiveCrowdsaleStorage storage self, uint256 _timestamp) internal constant returns (uint256[3]) {
+  function getSaleData(InteractiveCrowdsaleStorage storage self, uint256 _timestamp) internal view returns (uint256[3]) {
     return self.base.getSaleData(_timestamp);
   }
 
-  function getTokensSold(InteractiveCrowdsaleStorage storage self) internal constant returns (uint256) {
+  function getTokensSold(InteractiveCrowdsaleStorage storage self) internal view returns (uint256) {
     return self.base.getTokensSold();
   }
 

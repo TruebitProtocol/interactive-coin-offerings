@@ -11,11 +11,11 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
     let sale
     let startTime
 
-    before(async function() {
-        //sale = await InteractiveCrowdsaleTestContract.deployed()
-        //Advance to the next block to correctly read time in the solidity "now" function interpreted by testrpc
-        await advanceBlock()
-    })
+    // before(async function() {
+    //     //sale = await InteractiveCrowdsaleTestContract.deployed()
+    //     //Advance to the next block to correctly read time in the solidity "now" function interpreted by testrpc
+    //     await advanceBlock()
+    // })
 
     beforeEach(async function () {
       startTime = latestTime() + duration.weeks(7)
@@ -63,9 +63,9 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
       amount.should.be.bignumber.equal(5.8621e+22)
     })
 
-    it('has the correct valuation granularity', async () => {
-      const gran = await sale.getValuationGranularity()
-      gran.should.be.bignumber.equal(100000)
+    it('has the correct endWithdrawalTime', async () => {
+      const gran = await sale.getEndWithdrawlTime()
+      gran.should.be.bignumber.equal(1530000000)
     })
 
     /// CHECK THE REST OF THE INITIALIZATION
