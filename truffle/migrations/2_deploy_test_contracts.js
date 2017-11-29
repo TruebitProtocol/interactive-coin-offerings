@@ -31,7 +31,7 @@ module.exports = function(deployer, network, accounts) {
       // configured to set the token price to $1.41, with a periodic increase in the address cap by 250%
       var purchaseData =[1514160000,141,100,
                          1520000000,200,100];
-      return deployer.deploy(InteractiveCrowdsaleTestContract, accounts[5], purchaseData, 29000, 10000000, 1700000000, 100000, 1530000000, 1545696000, 50, CrowdsaleToken.address,{from:accounts[5]});
+      return deployer.deploy(InteractiveCrowdsaleTestContract, accounts[5], purchaseData, 29000, 10000000, 1700000000, 1530000000, 1545696000, 50, CrowdsaleToken.address,{from:accounts[5]});
     });
   }
 };

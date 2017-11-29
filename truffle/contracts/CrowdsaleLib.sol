@@ -107,7 +107,7 @@ library CrowdsaleLib {
   	require(self.owner == 0);
     require(_saleData.length > 0);
     require((_saleData.length%3) == 0); // ensure saleData is 3-item sets
-    require(_saleData[0] > (now + 3 days));
+    // require(_saleData[0] > (now + 3 days));
     require(_endTime > _saleData[0]);
     require(_capAmountInCents > 0);
     require(_owner > 0);

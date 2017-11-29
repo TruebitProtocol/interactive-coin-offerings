@@ -20,17 +20,16 @@ contract InteractiveCrowdsaleTestContract {
     uint256 fallbackExchangeRate,
     uint256 minimumRaise,
     uint256 capAmountInCents,
-    uint256 valuationGranularity,
     uint256 endWithdrawalTime,
     uint256 endTime,
     uint8 percentBurn,
-    CrowdsaleToken token)
+    CrowdsaleToken token) public
   {
   	sale.init(owner, saleData, fallbackExchangeRate, minimumRaise, capAmountInCents, endWithdrawalTime, endTime, percentBurn, token);
   }
 
   // fallback function can be used to buy tokens
-  function () payable {
+  function () public payable {
     //receivePurchase();
   }
 
@@ -50,87 +49,87 @@ contract InteractiveCrowdsaleTestContract {
     return sale.withdrawLeftoverWei();
   }
 
-  function withdrawOwnerEth() returns (bool) {
+  function withdrawOwnerEth() public returns (bool) {
   	return sale.withdrawOwnerEth();
   }
 
-  function crowdsaleActive() constant returns (bool) {
+  function crowdsaleActive() public view returns (bool) {
   	return sale.crowdsaleActive();
   }
 
-  function crowdsaleEnded() constant returns (bool) {
+  function crowdsaleEnded() public view returns (bool) {
   	return sale.crowdsaleEnded();
   }
 
-  function setTokenExchangeRate(uint256 _exchangeRate) returns (bool) {
+  function setTokenExchangeRate(uint256 _exchangeRate) public returns (bool) {
     return sale.setTokenExchangeRate(_exchangeRate);
   }
 
-  function setTokens() returns (bool) {
+  function setTokens() public returns (bool) {
     return sale.setTokens();
   }
 
-  function getOwner() constant returns (address) {
+  function getOwner() public view returns (address) {
     return sale.base.owner;
   }
 
-  function getMinimumRaise() constant returns (uint256) {
+  function getMinimumRaise() public view returns (uint256) {
     return sale.minimumRaise;
   }
 
-  function getTokensPerEth() constant returns (uint256) {
+  function getTokensPerEth() public view returns (uint256) {
     return sale.base.tokensPerEth;
   }
 
-  function getExchangeRate() constant returns (uint256) {
+  function getExchangeRate() public view returns (uint256) {
     return sale.base.exchangeRate;
   }
 
-  function getCapAmount() constant returns (uint256) {
+  function getCapAmount() public view returns (uint256) {
     return sale.base.capAmount;
   }
 
-  function getStartTime() constant returns (uint256) {
+  function getStartTime() public view returns (uint256) {
     return sale.base.startTime;
   }
 
-  function getEndTime() constant returns (uint256) {
+  function getEndTime() public view returns (uint256) {
     return sale.base.endTime;
   }
 
-  function getEndWithdrawlTime() constant returns (uint256) {
+  function getEndWithdrawlTime() public view returns (uint256) {
     return sale.endWithdrawalTime;
   }
 
-  function getTotalValuation() constant returns (uint256) {
+  function getTotalValuation() public view returns (uint256) {
     return sale.valueCommitted;
   }
 
-  function getContribution(address _buyer) constant returns (uint256) {
+  function getContribution(address _buyer) public view returns (uint256) {
     return sale.base.hasContributed[_buyer];
   }
 
-  function getTokenPurchase(address _buyer) constant returns (uint256) {
+  function getTokenPurchase(address _buyer) public view returns (uint256) {
     return sale.base.withdrawTokensMap[_buyer];
   }
 
-  function getLeftoverWei(address _buyer) constant returns (uint256) {
+  function getLeftoverWei(address _buyer) public view returns (uint256) {
     return sale.base.leftoverWei[_buyer];
   }
 
-  function getPersonalCap(address _bidder) constant returns (uint256) {
+  function getPersonalCap(address _bidder) public view returns (uint256) {
     return sale.getPersonalCap(_bidder);
   }
 
-  function getSaleData(uint256 timestamp) constant returns (uint256[3]) {
+  function getSaleData(uint256 timestamp) public view returns (uint256[3]) {
     return sale.getSaleData(timestamp);
   }
 
-  function getTokensSold() constant returns (uint256) {
+  function getTokensSold() public view returns (uint256) {
     return sale.getTokensSold();
   }
 
-  function getPercentBurn() constant returns (uint256) {
+  function getPercentBurn() public view returns (uint256) {
     return sale.base.percentBurn;
   }
 }
