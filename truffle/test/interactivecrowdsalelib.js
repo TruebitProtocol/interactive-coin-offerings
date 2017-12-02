@@ -8,75 +8,91 @@ const InteractiveCrowdsaleTestContract = artifacts.require("InteractiveCrowdsale
 // can also set sale as a global up here and carry it throughout
 // var sale;
 contract('InteractiveCrowdsaleTestContract', function (accounts) {
-    let sale
-    let startTime
 
-    // before(async function() {
-    //     //sale = await InteractiveCrowdsaleTestContract.deployed()
-    //     //Advance to the next block to correctly read time in the solidity "now" function interpreted by testrpc
-    //     await advanceBlock()
+    context("Intializing the contract", async () => {
+
+      let sale;
+      let startTime;
+
+      before(async function () {
+        startTime = latestTime() + duration.weeks(7)
+        this.endTime =   this.startTime + duration.years(2)
+        this.afterEndTime = this.endTime + duration.seconds(1)
+
+        sale = await InteractiveCrowdsaleTestContract.deployed()
+      })
+
+      it('has the correct owner', async () => {
+        const owner = await sale.getOwner()
+        owner.should.be.equal(accounts[5])
+      })
+
+      it('has the correct exchange rate', async () => {
+        const rate = await sale.getExchangeRate()
+        rate.should.be.bignumber.equal(29000)
+      })
+
+      it('has the correct minimum raise', async () => {
+        const raise = await sale.getMinimumRaise()
+        raise.should.be.bignumber.equal(10000000)
+      })
+
+      it('has the correct cap Amount', async () => {
+        const amount = await sale.getCapAmount()
+        amount.should.be.bignumber.equal(5.8621e+22)
+      })
+
+      it('has the correct endWithdrawalTime', async () => {
+        const gran = await sale.getEndWithdrawlTime()
+        gran.should.be.bignumber.equal(1530000000)
+      })
+
+      it('has the correct endTime', async () => {
+        const gran = await sale.getEndTime()
+        gran.should.be.bignumber.equal(1545696000)
+      })
+
+      it('initializes with zeroed valuation', async () => {
+        const valuation = await sale.getTotalValuation()
+        assert.equal(valuation, 0);
+      })
+
+      it('initializes with no tokens sold', async () => {
+        const sold = await sale.getTokensSold();
+        assert.equal(sold, 0);
+      })
+
+      it('has the correct burn percentage', async () => {
+        const burn = await sale.getPercentBurn();
+        assert.equal(burn.toNumber(), 50);
+      })
+
+      it('has the correct active status', async () => {
+        const active = await sale.crowdsaleActive();
+        assert.isFalse(active, "current sale is starting with past time");
+      })
+
+    }) //context
+
+
+
+    // it('can throw an error using a try catch block', async () => {
+    //   let err = false;
+    //   try{
+    //       await sale.submitBid({ value: 40000000000000000000, from: accounts[1] });
+    //     } catch(e) {
+    //     err = true;
+    //   }
+    //   assert.isTrue(err, "should give an error message since sale has not started");
+    // });
+
+
+    // it('should accept a bid', async () => {
+    //     await increaseTimeTo(startTime)
+    //     await sale.submitBid(100000000,0,{from:accounts[0],value:1000000})
+    //     const cont = sale.getContribution(accounts[0])
+    //     cont.should.be.bignumber.equal(1000000)
     // })
-
-    beforeEach(async function () {
-      startTime = latestTime() + duration.weeks(7)
-      this.endTime =   this.startTime + duration.years(2)
-      this.afterEndTime = this.endTime + duration.seconds(1)
-
-
-      sale = await InteractiveCrowdsaleTestContract.deployed()
-
-      //this.token = CrowdsaleToken.at(await sale.token())
-    })
-
-    // beforeEach(async () => {
-    //   sale = await InteractiveCrowdsaleTestContract.deployed()
-    // })
-
-    it('can throw an error using a try catch block', async () => {
-      let err = false;
-      try{
-          await sale.submitBid({ value: 40000000000000000000, from: accounts[1] });
-        } catch(e) {
-        err = true;
-      }
-      assert.isTrue(err, "should give an error message since sale has not started");
-    });
-
-
-    it('has the correct owner', async () => {
-      const owner = await sale.getOwner()
-      owner.should.be.equal(accounts[5])
-    })
-
-    it('has the correct exchange rate', async () => {
-      const rate = await sale.getExchangeRate()
-      rate.should.be.bignumber.equal(29000)
-    })
-
-    it('has the correct minimum raise', async () => {
-      const raise = await sale.getMinimumRaise()
-      raise.should.be.bignumber.equal(10000000)
-    })
-
-    it('has the correct cap Amount', async () => {
-      const amount = await sale.getCapAmount()
-      amount.should.be.bignumber.equal(5.8621e+22)
-    })
-
-    it('has the correct endWithdrawalTime', async () => {
-      const gran = await sale.getEndWithdrawlTime()
-      gran.should.be.bignumber.equal(1530000000)
-    })
-
-    /// CHECK THE REST OF THE INITIALIZATION
-
-
-    it('should accept a bid', async () => {
-        await increaseTimeTo(startTime)
-        await sale.submitBid(100000000,0,{from:accounts[0],value:1000000})
-        const cont = sale.getContribution(accounts[0])
-        cont.should.be.bignumber.equal(1000000)
-    })
 
 
 });
