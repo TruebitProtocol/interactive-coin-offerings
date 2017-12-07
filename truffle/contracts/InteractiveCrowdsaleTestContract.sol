@@ -132,4 +132,8 @@ contract InteractiveCrowdsaleTestContract {
   function getPercentBurn() public view returns (uint256) {
     return sale.base.percentBurn;
   }
+
+  function getSaleState() public view returns (uint256,uint256) {
+    return (sale.valuationPointer, sale.valueCommitted);
+  }
 }
