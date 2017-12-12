@@ -1,7 +1,5 @@
-LibVersions/AutoRemoval/truffle/build/
-LibVersions/PostRemoval/truffle/build/
-LibVersions/PointerWithMins/truffle/build/
+# Dependency directory
+truffle/node_modules
 
-LibVersions/AutoRemoval/truffle/node_modules/
-LibVersions/PostRemoval/truffle/node_modules/
-LibVersions/PointerWithMins/truffle/node_modules/
+# Debug log from npm
+truffle/npm-debug.log
