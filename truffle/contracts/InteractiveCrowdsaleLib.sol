@@ -62,7 +62,7 @@ library InteractiveCrowdsaleLib {
     // minimim amount that the sale needs to make to be successfull
     uint256 minimumRaise;
 
-    // shows the price that the address purchased tokens at
+    // shows the token price (tokens/ETH) that the address purchased tokens at
     mapping (address => uint256) pricePurchasedAt;
 
     // the sums of bids at each valuation
@@ -243,6 +243,7 @@ library InteractiveCrowdsaleLib {
     uint256 proposedCommit;
     uint256 currentBucket;
     bool exists;
+    
     // prepare to move the pointer by subtracting the current valuation bucket's
     // personal cap bids. The reason being that these bids will be eliminated
     // from the sale if the pointer moves up in valuation.
