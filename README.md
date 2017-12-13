@@ -129,7 +129,7 @@ Bidders cannot withdraw tokens until after the sale.
 
 ## Running Tests
 
-    - `bash run_test.sh`
+* `bash run_test.sh`
 
 ## Code Contributions
 
