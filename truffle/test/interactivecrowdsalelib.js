@@ -22,6 +22,7 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
         var purchaseData =[startTime,141,100,
                            startTime + duration.weeks(1),200,100];
         sale = await InteractiveCrowdsaleTestContract.new(accounts[5], purchaseData, 29000, 10000000, 1700000000, endWithdrawlTime, endTime, 50, CrowdsaleToken.address,{from:accounts[5]})
+
       })
 
       it('has the correct owner', async () => {
