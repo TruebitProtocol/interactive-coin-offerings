@@ -5,3 +5,5 @@ LibVersions/PointerWithMins/truffle/build/
 LibVersions/AutoRemoval/truffle/node_modules/
 LibVersions/PostRemoval/truffle/node_modules/
 LibVersions/PointerWithMins/truffle/node_modules/
+
+.DS_Store
