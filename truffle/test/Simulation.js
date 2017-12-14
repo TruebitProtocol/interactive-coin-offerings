@@ -32,9 +32,7 @@ function findPredictedValue(array, item) {
 
 
 function getRandomValueInEther(max, min){
-  // max = max * 10**18;
-  // min = min * 10**18;
-  return Math.floor(Math.random() * (max - min) + min)
+  return Math.floor(Math.random() * (max - min) + min) * Math.pow(10,18)
 }
 
 function generateEmptyMappings(size) {
@@ -61,14 +59,14 @@ async function simulate(accounts, sale){
   var valuationPointer = 0
   var valueCommitted = 0
   var minimumRaise = 0;
-  //var cap = 90;
+
   //Sim of mapping that maps uint to uints
   var valuationSums = {};
   var numBidsAtValuation = {};
-  for(var i = 1; i < accounts.length; i++){
+  for(var i = 0; i < accounts.length; i++){
     var temp = valuationsList.slice();
-    var value = getRandomValueInEther(1, 5);
-    var cap = getRandomValueInEther(50, 90);
+    var value = getRandomValueInEther(1,10);
+    var cap = getRandomValueInEther(100, 999);
     var spot = findPredictedValue(temp, cap);
     personalCaps[i] = cap;
 
@@ -77,32 +75,38 @@ async function simulate(accounts, sale){
       "value": value,
       "cap": cap,
       "proposedSpot": spot,
-      "totalCommites": valueCommitted,
+      "totalCommited": valueCommitted,
       "valuationsList": temp,
       "sender address": accounts[i],
     };
 
-    // if(typeof valuationSums[cap] != 'undefined'){
-    //   valuationSums[cap] += value;
-    // } else {
-    //   valuationSums[cap] = value;
-    // }
-    //
-    // if(typeof numBidsAtValuation[cap] != 'undefined'){
-    //   numBidsAtValuation[cap] += 1;
-    // } else {
-    //   numBidsAtValuation[cap] = 1;
-    // }
-
-    // interactionsSnapshots.push(snapshot);
       try{
-          var bid = await sale.submitBid(cap, spot, {from: accounts[i], value: value});
+          console.log(cap);
+          var bid = await sale.submitBid(cap, spot, {from: accounts[i], value: 100000000});
           valuationsList = insertInOrder(valuationsList, cap);
           valueCommitted += value;
-      } catch (e){
+
+          if(typeof valuationSums[cap] != 'undefined'){
+            valuationSums[cap] += value;
+          } else {
+            valuationSums[cap] = value;
+          }
+
+          if(typeof numBidsAtValuation[cap] != 'undefined'){
+            numBidsAtValuation[cap] += 1;
+          } else {
+            numBidsAtValuation[cap] = 1;
+          }
+
+          snapshot.succeed = true;
+      }
+      catch (e)
+      {
         failedTransactions.push(i);
         valuationsList = temp;
+        snapshot.succeed = false;
       }
+
     // var proposedValuation = valueCommitted - valuationSums[valuationsList[valuationPointer]];
     //
     // var currentBucket = valuationsList[valuationPointer + 1];
@@ -112,20 +116,19 @@ async function simulate(accounts, sale){
     //
     // };
     interactionsSnapshots.push(snapshot);
-    //cap--;
   }
 
-  for(var j = 0; j < 10; j++){
-    console.log("Snap:", interactionsSnapshots[j]);
+  return {
+    "pricePurchasedAt": pricePurchasedAt,
+    "personalCaps": personalCaps,
+    "valuationsList": valuationsList,
+    "valuationSums": valuationSums,
+    "numBidsAtValuation": numBidsAtValuation,
+    "valueCommitted": valueCommitted,
+    "failedTransactions": failedTransactions,
+    "interactionsSnapshots": interactionsSnapshots,
   }
 
-  console.log("pricePurchasedAt", pricePurchasedAt);
-  console.log("personalCaps", personalCaps);
-  console.log("valuationsList", valuationsList);
-  console.log("valuationSums", valuationSums);
-  console.log("numBidsAtValuation", numBidsAtValuation);
-  console.log("valueCommitted", valueCommitted);
-  console.log("failedTransactions", failedTransactions);
 
 }
 
@@ -146,7 +149,8 @@ contract("Simulation", (accounts) => {
 
   it("passes", async () => {
     await increaseTimeTo(startTime);
-    await simulate(accounts, sale);
-    assert.isTrue(true);
+    let simulation = await simulate(accounts, sale);
+    //Check sale state here
+    assert.isTrue(false);
   })
 })
