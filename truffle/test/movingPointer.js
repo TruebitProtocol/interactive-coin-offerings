@@ -32,7 +32,7 @@ function findPredictedValue(array, item) {
 
 
 function getRandomValueInEther(max, min){
-  return Math.floor(Math.random() * (max - min) + min) * Math.pow(10,18)
+  return Math.floor(Math.random() * (max - min) + min) //* Math.pow(10,18)
 }
 
 function generateEmptyMappings(size) {
@@ -43,11 +43,42 @@ function generateEmptyMappings(size) {
   return a;
 }
 
+function calculateValuationPointer(valueCommitted,valuationsList, valuationSums){
+  let proposedValuation = valueCommitted
+  // console.log("valuationsList: ", valuationsList);
+  // console.log("valuationSums: ", valuationSums);
+  // console.log("Value committed: ", proposedValuation);
+  let pointer = 0;
+  for(var i = 1; i < valuationsList.length; i++){
+    //console.log("Current bucket: ", valuationsList[i])
+    let sumAtValuation = valuationSums[valuationsList[i]];
+    //console.log("Sum at valuation i: ", sumAtValuation);
+    let prop = proposedValuation - sumAtValuation
+    //console.log("proposedValuation: ", prop);
+
+    if(valuationsList[i] >= prop && valuationsList[i] <= proposedValuation){
+      //console.log("Valuation in the middle of value commited and proposed value");
+      pointer = valuationsList[i];
+      break;
+    } else if(valuationsList[i] < prop){
+      proposedValuation -= sumAtValuation;
+    } else {
+      pointer = valuationsList[i - 1];
+      break;
+    }
+  }
+  // console.log("Proposed pointer: ", pointer);
+  // console.log("");
+  return pointer;
+}
+
 async function simulate(accounts, sale){
 
 
   var failedTransactions = [];
   var interactionsSnapshots = [];
+  let fetchedValuationPointer = [];
+  let calculatedValuationPointer = [];
 
   //Arrays that smulate mappings from address(position in the accounts array) to any value;
   var pricePurchasedAt, personalCaps =  generateEmptyMappings(accounts.length);;
@@ -66,7 +97,7 @@ async function simulate(accounts, sale){
   for(var i = 0; i < accounts.length; i++){
     var temp = valuationsList.slice();
     var value = getRandomValueInEther(1,10);
-    var cap = getRandomValueInEther(100, 999);
+    var cap = getRandomValueInEther(10, 200);
     var spot = findPredictedValue(temp, cap);
     personalCaps[i] = cap;
 
@@ -81,8 +112,7 @@ async function simulate(accounts, sale){
     };
 
       try{
-          console.log(cap);
-          var bid = await sale.submitBid(cap, spot, {from: accounts[i], value: 100000000});
+          var bid = await sale.submitBid(cap, spot, {from: accounts[i], value: value});
           valuationsList = insertInOrder(valuationsList, cap);
           valueCommitted += value;
 
@@ -99,6 +129,10 @@ async function simulate(accounts, sale){
           }
 
           snapshot.succeed = true;
+
+          var valPointer = await sale.getTotalValuationPointer();
+          fetchedValuationPointer.push(valPointer.toNumber());
+          calculatedValuationPointer.push(calculateValuationPointer(valueCommitted, valuationsList, valuationSums));
       }
       catch (e)
       {
@@ -107,14 +141,6 @@ async function simulate(accounts, sale){
         snapshot.succeed = false;
       }
 
-    // var proposedValuation = valueCommitted - valuationSums[valuationsList[valuationPointer]];
-    //
-    // var currentBucket = valuationsList[valuationPointer + 1];
-    // console.log("proposedCommit", proposedCommit);
-    // console.log("currentBucket", currentBucket);
-    // while(currentBucket < proposedCommit){
-    //
-    // };
     interactionsSnapshots.push(snapshot);
   }
 
@@ -127,12 +153,14 @@ async function simulate(accounts, sale){
     "valueCommitted": valueCommitted,
     "failedTransactions": failedTransactions,
     "interactionsSnapshots": interactionsSnapshots,
+    "fetchedValuationPointer": fetchedValuationPointer,
+    "calculatedValuationPointer": calculatedValuationPointer,
   }
 
 
 }
 
-contract("Simulation", (accounts) => {
+contract("Moving pointer", (accounts) => {
   let sale, startTime, endWithdrawlTime, endTime, afterEndTime;
 
   before(async function () {
@@ -147,10 +175,14 @@ contract("Simulation", (accounts) => {
 
   })
 
-  it("passes", async () => {
+  it("Calculates moving pointer correctly", async () => {
     await increaseTimeTo(startTime);
     let simulation = await simulate(accounts, sale);
-    //Check sale state here
-    assert.isTrue(false);
+    console.log("fetched Pointers: ", simulation.fetchedValuationPointer);
+    console.log("calculated pointers", simulation.calculatedValuationPointer);
+    for(var i = 0; i < simulation.fetchedValuationPointer.length; i++){
+      assert.equal(simulation.fetchedValuationPointer[i], simulation.calculatedValuationPointer[i], "Results from fetched value differ from calculated value");
+    }
+
   })
 })
