@@ -43,33 +43,38 @@ function generateEmptyMappings(size) {
   return a;
 }
 
-function calculateValuationPointer(valueCommitted,valuationsList, valuationSums){
-  let proposedValuation = valueCommitted
+function calculateValuationPointer (valueCommitted, valuationsList, valuationSums) {
+  let proposedValuation = 0
+  let committedAtThisValue = 0;
   // console.log("valuationsList: ", valuationsList);
   // console.log("valuationSums: ", valuationSums);
   // console.log("Value committed: ", proposedValuation);
-  let pointer = 0;
-  for(var i = 1; i < valuationsList.length; i++){
-    //console.log("Current bucket: ", valuationsList[i])
-    let sumAtValuation = valuationSums[valuationsList[i]];
-    //console.log("Sum at valuation i: ", sumAtValuation);
-    let prop = proposedValuation - sumAtValuation
-    //console.log("proposedValuation: ", prop);
+  let pointer = 0
+  for (var i = valuationsList.length - 1; i > 0; i--) {
+    // console.log("Current bucket: ", valuationsList[i])
+    let sumAtValuation = valuationSums[valuationsList[i]]
+    // console.log("Sum at valuation i: ", sumAtValuation);
+    committedAtThisValue += sumAtValuation
+    // console.log("proposedValuation: ", prop);
+    proposedValuation = committedAtThisValue
 
-    if(valuationsList[i] >= prop && valuationsList[i] <= proposedValuation){
-      //console.log("Valuation in the middle of value commited and proposed value");
-      pointer = valuationsList[i];
-      break;
-    } else if(valuationsList[i] < prop){
-      proposedValuation -= sumAtValuation;
-    } else {
-      pointer = valuationsList[i - 1];
-      break;
+    if (proposedValuation >= valuationsList[i]) {
+      // console.log("Valuation in the middle of value commited and proposed value");
+      let proposedCommit = proposedValuation - sumAtValuation
+      if (proposedCommit > valuationsList[i]) {
+        proposedValuation = proposedCommit
+        committedAtThisValue = proposedCommit
+      } else {
+        proposedValuation = valuationsList[i]
+      }
+      pointer = valuationsList[i]
+
+      break
     }
   }
   // console.log("Proposed pointer: ", pointer);
   // console.log("");
-  return pointer;
+  return { pointer, proposedValuation, committedAtThisValue }
 }
 
 async function simulate(accounts, sale){
@@ -106,7 +111,7 @@ async function simulate(accounts, sale){
       "value": value,
       "cap": cap,
       "proposedSpot": spot,
-      "totalCommited": valueCommitted,
+      "totalCommited": valueCommitted + value,
       "valuationsList": temp,
       "sender address": accounts[i],
     };
@@ -130,20 +135,27 @@ async function simulate(accounts, sale){
 
           snapshot.succeed = true;
 
-          var valPointer = await sale.getTotalValuationPointer();
-          fetchedValuationPointer.push(valPointer.toNumber());
-          calculatedValuationPointer.push(calculateValuationPointer(valueCommitted, valuationsList, valuationSums));
+          var valuation = await sale.getCurrentBucket();
+          fetchedValuationPointer.push(valuation.toNumber());
+          let calcObject = calculateValuationPointer(valueCommitted, valuationsList, valuationSums)
+          snapshot.calculatedPointer = calcObject.pointer;
+          snapshot.proposedValue = calcObject.proposedValuation;
+          snapshot.committedAtThisValue = calcObject.committedAtThisValue;
+          calculatedValuationPointer.push(calcObject.pointer);
       }
       catch (e)
       {
         failedTransactions.push(i);
         valuationsList = temp;
         snapshot.succeed = false;
+        snapshot.error = e;
       }
 
     interactionsSnapshots.push(snapshot);
   }
 
+  console.log(interactionsSnapshots);
+  
   return {
     "pricePurchasedAt": pricePurchasedAt,
     "personalCaps": personalCaps,
@@ -176,7 +188,7 @@ contract("Moving pointer", (accounts) => {
   })
 
   it("Calculates moving pointer correctly", async () => {
-    await increaseTimeTo(startTime);
+    await increaseTimeTo(startTime+3);
     let simulation = await simulate(accounts, sale);
     console.log("fetched Pointers: ", simulation.fetchedValuationPointer);
     console.log("calculated pointers", simulation.calculatedValuationPointer);
