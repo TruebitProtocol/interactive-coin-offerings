@@ -298,7 +298,6 @@ library InteractiveCrowdsaleLib {
       }
 
       self.valueCommitted = _proposedCommit;
-
     }
 
     self.pricePurchasedAt[msg.sender] = self.base.tokensPerEth;
