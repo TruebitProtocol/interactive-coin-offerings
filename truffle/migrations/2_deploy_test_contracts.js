@@ -29,9 +29,9 @@ module.exports = function(deployer, network, accounts) {
     deployer.deploy(CrowdsaleToken, accounts[5], "Tester Token", "TST", 18, 20000000000000000000000000, false, {from:accounts[5]})
   .then(function() {
       // configured to set the token price to $1.41, with a periodic increase in the address cap by 250%
-      var purchaseData =[1514160000,141,100,
-                         1520000000,200,100];
-      return deployer.deploy(InteractiveCrowdsaleTestContract, accounts[5], purchaseData, 29000, 10000000, 1700000000, 1530000000, 1545696000, 50, CrowdsaleToken.address,{from:accounts[5]});
+      // var purchaseData =[1654998799,141,100,
+      //                    1655000000,200,100];
+      // return deployer.deploy(InteractiveCrowdsaleTestContract, accounts[5], purchaseData, 29000, 10000000, 1700000000, 1660000000, 175696000, 50, CrowdsaleToken.address,{from:accounts[5]});
     });
   }
 };

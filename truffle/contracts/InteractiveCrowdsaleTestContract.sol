@@ -101,7 +101,7 @@ contract InteractiveCrowdsaleTestContract {
     return sale.endWithdrawalTime;
   }
 
-  function getTotalValuation() public view returns (uint256) {
+  function getCommittedCapital() public view returns (uint256) {
     return sale.valueCommitted;
   }
 
@@ -131,5 +131,13 @@ contract InteractiveCrowdsaleTestContract {
 
   function getPercentBurn() public view returns (uint256) {
     return sale.base.percentBurn;
+  }
+
+  function getCurrentBucket() public view returns (uint256) {
+    return sale.currentBucket;
+  }
+  
+  function getTotalValuation() public view returns (uint256) {
+    return sale.totalValuation;
   }
 }
