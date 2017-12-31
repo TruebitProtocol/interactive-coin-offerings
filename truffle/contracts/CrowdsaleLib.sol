@@ -2,9 +2,9 @@ pragma solidity ^0.4.18;
 
 /**
  * @title CrowdsaleLib
- * @author Majoolr.io
+ * @author Modular Inc, https://modular.network
  *
- * version 2.1.0
+ * version 2.1.1
  * Copyright (c) 2017 Majoolr, LLC
  * The MIT License (MIT)
  * https://github.com/Majoolr/ethereum-libraries/blob/master/LICENSE
@@ -17,7 +17,7 @@ pragma solidity ^0.4.18;
  * community. Our purpose is to test, document, and deploy reusable code onto the
  * blockchain and improve both security and usability. We also educate non-profits,
  * schools, and other community members about the application of blockchain
- * technology. For further information: majoolr.io
+ * technology. For further information: modular.network
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
  * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
@@ -107,7 +107,7 @@ library CrowdsaleLib {
   	require(self.owner == 0);
     require(_saleData.length > 0);
     require((_saleData.length%3) == 0); // ensure saleData is 3-item sets
-    // require(_saleData[0] > (now + 3 days));
+    require(_saleData[0] > (now + 2 hours));
     require(_endTime > _saleData[0]);
     require(_capAmountInCents > 0);
     require(_owner > 0);
@@ -330,6 +330,6 @@ library CrowdsaleLib {
   /// @param self Stored Crowdsale from crowdsale contract
   /// @return Number of tokens sold
   function getTokensSold(CrowdsaleStorage storage self) public view returns (uint256) {
-    return self.startingTokenBalance - self.token.balanceOf(this);
+    return self.startingTokenBalance - self.withdrawTokensMap[self.owner];
   }
 }

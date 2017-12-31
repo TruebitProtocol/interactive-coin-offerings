@@ -1,5 +1,6 @@
 # Dependency directory
 truffle/node_modules
 
+.DS_Store
 # Debug log from npm
 truffle/npm-debug.log
