@@ -35,6 +35,11 @@ function getRandomValueInEther(max, min){
   return Math.floor(Math.random() * (max - min) + min) //* Math.pow(10,18)
 }
 
+function getSubmitOrWithdraw(){
+  // set closer to 1 for more withdrawals
+  return Math.random() >= 0.35;
+}
+
 function generateEmptyMappings(size) {
   var a = [];
   for(var i=0; i < size; i++){
@@ -99,25 +104,47 @@ async function simulate(accounts, sale){
   //Sim of mapping that maps uint to uints
   var valuationSums = {};
   var numBidsAtValuation = {};
+  var bid;
+  var cap;
+  var value;
+  var valuation;
+  var withdrawValue;
+
   for(var i = 0; i < accounts.length; i++){
+    let submit;
+    if((i === 0) || (i === 6)){ submit = true; } else { submit = getSubmitOrWithdraw(); }
+
+    if(!submit){
+      console.log('withdraw');
+      await sale.withdrawBid({from: accounts[i-1]});
+      withdrawValue = await sale.getLeftoverWei(accounts[i-1]);
+      withdrawValue = withdrawValue.toNumber();
+      valuationSums[cap] -=  withdrawValue;
+      numBidsAtValuation[cap]--;
+      valueCommitted -= withdrawValue;
+    } else {
+      withdrawValue = 0;
+    }
+
     var temp = valuationsList.slice();
-    var value = getRandomValueInEther(1,10);
-    var cap = getRandomValueInEther(10, 200);
+    value = getRandomValueInEther(1,10);
+    cap = getRandomValueInEther(10, 200);
     var spot = findPredictedValue(temp, cap);
     personalCaps[i] = cap;
 
     let snapshot = {
       "iteraction": i,
-      "value": value,
+      "withdraw previous bid": !submit,
+      "withdraw amount": withdrawValue,
+      "new bid value": value,
       "cap": cap,
       "proposedSpot": spot,
       "totalCommited": valueCommitted + value,
-      "valuationsList": temp,
       "sender address": accounts[i],
     };
 
       try{
-          var bid = await sale.submitBid(cap, spot, {from: accounts[i], value: value});
+          bid = await sale.submitBid(cap, spot, {from: accounts[i], value: value});
           valuationsList = insertInOrder(valuationsList, cap);
           valueCommitted += value;
 
@@ -135,8 +162,11 @@ async function simulate(accounts, sale){
 
           snapshot.succeed = true;
 
-          var valuation = await sale.getCurrentBucket();
+          valuation = await sale.getCurrentBucket();
           fetchedValuationPointer.push(valuation.toNumber());
+          console.log('cap '+cap);
+          console.log('value '+value);
+          console.log(valuationSums);
           let calcObject = calculateValuationPointer(valueCommitted, valuationsList, valuationSums)
           snapshot.calculatedPointer = calcObject.pointer;
           snapshot.proposedValue = calcObject.proposedValuation;
@@ -150,12 +180,12 @@ async function simulate(accounts, sale){
         snapshot.succeed = false;
         snapshot.error = e;
       }
-
+    snapshot.valuationsList = valuationsList;
     interactionsSnapshots.push(snapshot);
   }
 
-  console.log(interactionsSnapshots);
-  
+  //console.log(interactionsSnapshots);
+
   return {
     "pricePurchasedAt": pricePurchasedAt,
     "personalCaps": personalCaps,
@@ -176,19 +206,23 @@ contract("Moving pointer", (accounts) => {
   let sale, startTime, endWithdrawlTime, endTime, afterEndTime;
 
   before(async function () {
-    startTime = latestTime() + duration.weeks(7)
+    startTime = latestTime() + duration.weeks(7) + duration.hours(4);
     endWithdrawlTime = startTime + duration.weeks(100)
-    endTime =  startTime + duration.years(2)
+    endTime = startTime + duration.years(2)
     afterEndTime = endTime + duration.seconds(1)
-
+    console.log(startTime);
+    console.log(latestTime());
+    console.log(new Date().valueOf())
     var purchaseData =[startTime,141,100,
                        startTime + duration.weeks(1),200,100];
+    console.log(accounts[5],purchaseData,endWithdrawlTime,endTime,CrowdsaleToken.address);
     sale = await InteractiveCrowdsaleTestContract.new(accounts[5], purchaseData, 29000, 10000000, 1700000000, endWithdrawlTime, endTime, 50, CrowdsaleToken.address,{from:accounts[5]})
 
   })
 
   it("Calculates moving pointer correctly", async () => {
-    await increaseTimeTo(startTime+3);
+
+    await increaseTimeTo(startTime);
     let simulation = await simulate(accounts, sale);
     console.log("fetched Pointers: ", simulation.fetchedValuationPointer);
     console.log("calculated pointers", simulation.calculatedValuationPointer);
