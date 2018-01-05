@@ -72,10 +72,6 @@ contract InteractiveCrowdsaleTestContract {
     return sale.base.owner;
   }
 
-  function getMinimumRaise() public view returns (uint256) {
-    return sale.minimumRaise;
-  }
-
   function getTokensPerEth() public view returns (uint256) {
     return sale.base.tokensPerEth;
   }
@@ -131,7 +127,7 @@ contract InteractiveCrowdsaleTestContract {
   function getCurrentBucket() public view returns (uint256) {
     return sale.currentBucket;
   }
-  
+
   function getTotalValuation() public view returns (uint256) {
     return sale.totalValuation;
   }

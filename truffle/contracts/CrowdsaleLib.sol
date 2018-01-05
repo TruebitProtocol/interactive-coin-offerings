@@ -38,9 +38,9 @@ library CrowdsaleLib {
   struct CrowdsaleStorage {
     address owner;     //owner of the crowdsale
 
-    uint256 tokensPerEth;  //number of tokens received per ether
-    uint256 startTime; //ICO start time, timestamp
-    uint256 endTime; //ICO end time, timestamp automatically calculated
+  	uint256 tokensPerEth;  //number of tokens received per ether
+  	uint256 startTime; //ICO start time, timestamp
+  	uint256 endTime; //ICO end time, timestamp automatically calculated
     uint256 exchangeRate; //cents/ETH exchange rate at the time of the sale
     uint256 ownerBalance; //owner wei Balance
     uint256 startingTokenBalance; //initial amount of tokens for sale
@@ -100,7 +100,7 @@ library CrowdsaleLib {
                 CrowdsaleToken _token)
                 public
   {
-    require(self.owner == 0);
+  	require(self.owner == 0);
     require(_saleData.length > 0);
     require((_saleData.length%3) == 0); // ensure saleData is 3-item sets
     require(_saleData[0] > (now + 2 hours));
