@@ -53,10 +53,12 @@ library InteractiveCrowdsaleLib {
     uint256 endWithdrawalTime;   // time when manual withdrawals are no longer allowed
 
     // current total valuation of the sale
+    // actuall amount of ETH committed, taking into account partial purchases
     uint256 totalValuation;
 
     // amount of value committed at this valuation, cannot rely on owner balance
     // due to fluctations in commitment calculations needed after owner withdraws
+    // the amount of ETH committed, including total bids that will eventually get partial purchases 
     uint256 valueCommitted;
 
     // the bucket that sits either at or just below current total valuation
@@ -95,7 +97,8 @@ library InteractiveCrowdsaleLib {
   // Indicates when the price of the token changes
   event LogTokenPriceChange(uint256 amount, string Msg);
 
-  event BucketAndValuation(uint256 bucket, uint256 valuation);
+  // Logs the current bucket that the valuation points to, the total valuation of the sale, and the amount of ETH committed, including total bids that will eventually get partial purchases 
+  event BucketAndValuationAndCommitted(uint256 bucket, uint256 valuation, uint256 committed);
 
 
   /// @dev Called by a crowdsale contract upon creation.
@@ -253,7 +256,7 @@ library InteractiveCrowdsaleLib {
     bool exists;
 
     // we only affect the pointer if we are coming in above it
-    if(_personalCap > self.totalValuation){
+    if(_personalCap > self.currentBucket){
 
       // if our valuation is sitting at the current bucket then we are using
       // commitments right at their cap
@@ -272,6 +275,7 @@ library InteractiveCrowdsaleLib {
       if(loop){
         // if we're going to loop we move to the next bucket
         (exists,_currentBucket) = self.valuationsList.getAdjacent(self.currentBucket, NEXT);
+
         while(_proposedCommit >= _currentBucket){
           // while we are proposed higher than the next bucket we drop commitments
           // and iterate to the next
@@ -285,7 +289,6 @@ library InteractiveCrowdsaleLib {
         // else we're staying at the current bucket
         _currentBucket = self.currentBucket;
       }
-
       // if our proposed commitment is less than or equal to the bucket
       if(_proposedCommit <= _currentBucket){
         // we add the commitments in that bucket
@@ -298,11 +301,13 @@ library InteractiveCrowdsaleLib {
       }
 
       self.valueCommitted = _proposedCommit;
+    } else if(_personalCap == self.totalValuation){
+      self.valueCommitted += _amount;
     }
 
     self.pricePurchasedAt[msg.sender] = self.base.tokensPerEth;
     LogBidAccepted(msg.sender, _amount, _personalCap);
-
+    BucketAndValuationAndCommitted(self.currentBucket, self.totalValuation, self.valueCommitted);
     return true;
   }
 
@@ -324,8 +329,9 @@ library InteractiveCrowdsaleLib {
       refundWei = self.base.hasContributed[msg.sender];
 
     } else {
-      uint256 multiplierPercent = (100*((self.endWithdrawalTime+self.base.milestoneTimes[0]) - now))/self.endWithdrawalTime;
-      refundWei = (multiplierPercent*self.base.hasContributed[msg.sender])/100;
+      //uint256 multiplierPercent = (100*((self.endWithdrawalTime+self.base.milestoneTimes[0]) - now))/self.endWithdrawalTime;
+      //refundWei = (multiplierPercent*self.base.hasContributed[msg.sender])/100;
+      refundWei = self.base.hasContributed[msg.sender];
     }
 
     // Put the sender's contributed wei into the leftoverWei mapping for later withdrawal
@@ -339,67 +345,66 @@ library InteractiveCrowdsaleLib {
     self.numBidsAtValuation[self.personalCaps[msg.sender]] -= 1;
 
     uint256 _proposedCommit;
+    uint256 _proposedValue;
     uint256 _currentBucket;
     bool loop;
     bool exists;
 
-    // bidder's withdrawal only affects the pointer if it is at or above the
-    // current valuation
+    // bidder's withdrawal only affects the pointer if the personal cap is at or
+    // above the current valuation
     if(self.personalCaps[msg.sender] >= self.totalValuation){
 
       // first we remove the refundWei from the committed value
       _proposedCommit = self.valueCommitted - refundWei;
 
-      // if we've dropped below the current bucket and our valuation sat above that
-      // bucket, we now add the bids at that bucket
-      if((_proposedCommit <= self.currentBucket) && (self.totalValuation > self.currentBucket)){
-        _proposedCommit += self.valuationSums[self.currentBucket];
+      // if we've dropped below the current bucket
+      if(_proposedCommit <= self.currentBucket){
+        // and current valuation is above the bucket
+        if(self.totalValuation > self.currentBucket){
+          _proposedCommit += self.valuationSums[self.currentBucket];
+        }
+
+        if(_proposedCommit >= self.currentBucket){
+          _proposedValue = self.currentBucket;
+        } else {
+          // if we are still below the current bucket then we need to iterate
+          loop = true;
+        }
+      } else {
+        if(self.totalValuation == self.currentBucket){
+          _proposedValue = self.totalValuation;
+        } else {
+          _proposedValue = _proposedCommit;
+        }
       }
 
-      // if we are still below the current bucket then we need to iterate
-      if(_proposedCommit <= self.currentBucket){
-        loop = true;
-      }
 
       if(loop){
         // if we're going to loop we move to the previous bucket
         (exists,_currentBucket) = self.valuationsList.getAdjacent(self.currentBucket, PREV);
-        while(_proposedCommit <= _currentBucket){
+        while(_proposedCommit < _currentBucket){
           // while we are proposed lower than the previous bucket we add commitments
+          _proposedCommit += self.valuationSums[_currentBucket];
           // and iterate to the previous
-          _proposedCommit = _proposedCommit + self.valuationSums[_currentBucket];
-          (exists,_currentBucket) = self.valuationsList.getAdjacent(_currentBucket, PREV);
+          if(_proposedCommit >= _currentBucket){
+            _proposedValue = _currentBucket;
+          } else {
+            (exists,_currentBucket) = self.valuationsList.getAdjacent(_currentBucket, PREV);
+          }
         }
-        // once we've reached a bucket too low we move forward to the next bucket and set it
-        (exists, _currentBucket) = self.valuationsList.getAdjacent(_currentBucket, NEXT);
+
+        if(_proposedValue == 0) { _proposedValue = _proposedCommit; }
+
         self.currentBucket = _currentBucket;
-      } else {
-        // else we're staying at the current bucket
-        _currentBucket = self.currentBucket;
       }
 
-      // if we are proposed to commit more than the current bucket
-      if (_proposedCommit > _currentBucket) {
-        // then we max our valuation at this bucket's cap
-        self.totalValuation = _currentBucket;
-      } else {
-        // else our new valuation is the amount we have proposed to commit
-        self.totalValuation = _proposedCommit;
-      }
-
+      self.totalValuation = _proposedValue;
       self.valueCommitted = _proposedCommit;
     }
 
-    // remove the entry for this personal cap if it is the last bid at this
-    // valuation to be finalized
-    if (self.numBidsAtValuation[self.personalCaps[msg.sender]] == 0) {
-      // Removing the entry from the linked list returns the key of the removed
-      // entry, so make sure that was succesful
-      assert(self.valuationsList.remove(self.personalCaps[msg.sender]) == self.personalCaps[msg.sender]);
-    }
-
     LogBidWithdrawn(msg.sender, self.base.hasContributed[msg.sender], self.personalCaps[msg.sender]);
-
+    return true;
+    BucketAndValuationAndCommitted(self.currentBucket, self.totalValuation, self.valueCommitted);
   }
 
   /// @dev This should be called once the sale is over to commit all bids into
