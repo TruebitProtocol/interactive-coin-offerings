@@ -21,7 +21,7 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
 
         var purchaseData =[startTime,141,100,
                            startTime + duration.weeks(1),200,100];
-        sale = await InteractiveCrowdsaleTestContract.new(accounts[5], purchaseData, 29000, 10000000, 1700000000, endWithdrawlTime, endTime, 50, CrowdsaleToken.address,{from:accounts[5]})
+        sale = await InteractiveCrowdsaleTestContract.new(accounts[5], purchaseData, 29000, 10000000, endWithdrawlTime, endTime, 50, CrowdsaleToken.address,{from:accounts[5]})
 
       })
 
@@ -38,11 +38,6 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
       it('has the correct minimum raise', async () => {
         const raise = await sale.getMinimumRaise()
         raise.should.be.bignumber.equal(10000000)
-      })
-
-      it('has the correct cap Amount', async () => {
-        const amount = await sale.getCapAmount()
-        amount.should.be.bignumber.equal(5.8621e+22)
       })
 
       it('has the correct endWithdrawalTime', async () => {
@@ -87,7 +82,7 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
 
         var purchaseData =[startTime,141,100,
                            startTime + duration.weeks(1),200,100];
-        sale = await InteractiveCrowdsaleTestContract.new(accounts[5], purchaseData, 29000, 10000000, 1700000000, endWithdrawlTime, endTime, 50, CrowdsaleToken.address,{from:accounts[5]})
+        sale = await InteractiveCrowdsaleTestContract.new(accounts[5], purchaseData, 29000, 10000000, endWithdrawlTime, endTime, 50, CrowdsaleToken.address,{from:accounts[5]})
       })
 
       it("'Can't submit bid if sale hasn't started", async () => {
