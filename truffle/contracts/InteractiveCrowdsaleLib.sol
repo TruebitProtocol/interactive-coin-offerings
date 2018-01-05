@@ -382,7 +382,6 @@ library InteractiveCrowdsaleLib {
       if(loop){
         // if we're going to loop we move to the previous bucket
         (exists,_currentBucket) = self.valuationsList.getAdjacent(self.currentBucket, PREV);
-        _proposedCommit = _proposedCommit + self.valuationSums[_currentBucket];
         while(_proposedCommit < _currentBucket){
           // while we are proposed lower than the previous bucket we add commitments
           _proposedCommit += self.valuationSums[_currentBucket];
