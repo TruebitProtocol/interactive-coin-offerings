@@ -252,7 +252,7 @@ library InteractiveCrowdsaleLib {
     bool loop;
     bool exists;
 
-    // we only affect the pointer if we are coming in at or above it
+    // we only affect the pointer if we are coming in above it
     if(_personalCap > self.currentBucket){
 
       // if our valuation is sitting at the current bucket then we are using
@@ -382,7 +382,8 @@ library InteractiveCrowdsaleLib {
       if(loop){
         // if we're going to loop we move to the previous bucket
         (exists,_currentBucket) = self.valuationsList.getAdjacent(self.currentBucket, PREV);
-        while(_proposedCommit <= _currentBucket){
+        _proposedCommit = _proposedCommit + self.valuationSums[_currentBucket];
+        while(_proposedCommit < _currentBucket){
           // while we are proposed lower than the previous bucket we add commitments
           _proposedCommit += self.valuationSums[_currentBucket];
           // and iterate to the previous
