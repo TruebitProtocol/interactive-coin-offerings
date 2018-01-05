@@ -53,10 +53,12 @@ library InteractiveCrowdsaleLib {
     uint256 endWithdrawalTime;   // time when manual withdrawals are no longer allowed
 
     // current total valuation of the sale
+    // actuall amount of ETH committed, taking into account partial purchases
     uint256 totalValuation;
 
     // amount of value committed at this valuation, cannot rely on owner balance
     // due to fluctations in commitment calculations needed after owner withdraws
+    // the amount of ETH committed, including total bids that will eventually get partial purchases 
     uint256 valueCommitted;
 
     // the bucket that sits either at or just below current total valuation
@@ -95,6 +97,7 @@ library InteractiveCrowdsaleLib {
   // Indicates when the price of the token changes
   event LogTokenPriceChange(uint256 amount, string Msg);
 
+  // Logs the current bucket that the valuation points to, the total valuation of the sale, and the amount of ETH committed, including total bids that will eventually get partial purchases 
   event BucketAndValuationAndCommitted(uint256 bucket, uint256 valuation, uint256 committed);
 
 
@@ -376,9 +379,6 @@ library InteractiveCrowdsaleLib {
       }
 
 
-
-
-      //BucketAndValuationAndCommitted(self.currentBucket,_proposedCommit, self.valueCommitted);
       if(loop){
         // if we're going to loop we move to the previous bucket
         (exists,_currentBucket) = self.valuationsList.getAdjacent(self.currentBucket, PREV);
@@ -393,7 +393,7 @@ library InteractiveCrowdsaleLib {
           }
         }
 
-        if(_proposedValue == 0){ _proposedValue = _proposedCommit; }
+        if(_proposedValue == 0) { _proposedValue = _proposedCommit; }
 
         self.currentBucket = _currentBucket;
       }
