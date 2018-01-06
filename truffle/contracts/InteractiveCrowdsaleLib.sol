@@ -108,7 +108,6 @@ library InteractiveCrowdsaleLib {
   /// array index-0 is timestamp, index-1 is price in cents at that time
   /// index-2 is address purchase valuation at that time, 0 if no address valuation
   /// @param _fallbackExchangeRate Exchange rate of cents/ETH
-  /// @param _capAmountInCents Total to be raised in cents
   /// @param _endTime Timestamp of sale end time
   /// @param _percentBurn Percentage of extra tokens to burn
   /// @param _token Token being sold
@@ -117,7 +116,6 @@ library InteractiveCrowdsaleLib {
                 uint256[] _saleData,
                 uint256 _fallbackExchangeRate,
                 uint256 _minimumRaise,
-                uint256 _capAmountInCents,
                 uint256 _endWithdrawalTime,
                 uint256 _endTime,
                 uint8 _percentBurn,
@@ -126,14 +124,12 @@ library InteractiveCrowdsaleLib {
     self.base.init(_owner,
                 _saleData,
                 _fallbackExchangeRate,
-                _capAmountInCents,
                 _endTime,
                 _percentBurn,
                 _token);
 
     require(_endWithdrawalTime < _endTime);
     require(_minimumRaise > 0);
-    require(_minimumRaise < _capAmountInCents);
     self.minimumRaise = _minimumRaise;
     self.endWithdrawalTime = _endWithdrawalTime;
   }

@@ -26,12 +26,10 @@ module.exports = function(deployer, network, accounts) {
     deployer.link(BasicMathLib,InteractiveCrowdsaleTestContract);
     deployer.link(CrowdsaleLib,InteractiveCrowdsaleTestContract);
     deployer.link(InteractiveCrowdsaleLib, InteractiveCrowdsaleTestContract);
-    deployer.deploy(CrowdsaleToken, accounts[5], "Tester Token", "TST", 18, 20000000000000000000000000, false, {from:accounts[5]})
-  .then(function() {
+    deployer.deploy(CrowdsaleToken, accounts[5], "Tester Token", "TST", 18, 20000000000000000000000000, false, {from:accounts[5]});
       // configured to set the token price to $1.41, with a periodic increase in the address cap by 250%
       // var purchaseData =[1654998799,141,100,
       //                    1655000000,200,100];
       // return deployer.deploy(InteractiveCrowdsaleTestContract, accounts[5], purchaseData, 29000, 10000000, 1700000000, 1660000000, 175696000, 50, CrowdsaleToken.address,{from:accounts[5]});
-    });
   }
 };
