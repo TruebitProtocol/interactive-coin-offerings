@@ -78,6 +78,12 @@ library InteractiveCrowdsaleLib {
     // percentage of total tokens being sold in this sale
     uint8 percentBeingSold;
 
+    // base price of the tokens being sold
+    uint256 basePrice;
+
+    // percentage of total tokens being sold in this sale
+    uint8 percentBeingSold;
+
     bool ownerHasWithdrawnETH;
 
     // shows the price that the address purchased tokens at
