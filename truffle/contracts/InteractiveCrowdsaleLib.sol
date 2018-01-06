@@ -512,13 +512,11 @@ library InteractiveCrowdsaleLib {
     self.base.leftoverWei[msg.sender] += remainder;
 
     // burn any extra bonus tokens
-    if(self.pricePurchasedAt[msg.sender] > self.base.tokensPerEth){
-      uint256 _fullBonus;
-      uint256 _fullBonusPrice = (self.base.tokensPerEth*(100 + self.priceBonusPercent))/100;
-      (_fullBonus, remainder) = calculateTokenPurchase(self, self.base.hasContributed[msg.sender], _fullBonusPrice);
-      uint256 _leftoverBonus = _fullBonus - numTokens;
-      self.base.token.burnToken(_leftoverBonus);
-    }
+    uint256 _fullBonus;
+    uint256 _fullBonusPrice = (self.base.tokensPerEth*(100 + self.priceBonusPercent))/100;
+    (_fullBonus, remainder) = calculateTokenPurchase(self, self.base.hasContributed[msg.sender], _fullBonusPrice);
+    uint256 _leftoverBonus = _fullBonus - numTokens;
+    self.base.token.burnToken(_leftoverBonus);
 
     return true;
   }
