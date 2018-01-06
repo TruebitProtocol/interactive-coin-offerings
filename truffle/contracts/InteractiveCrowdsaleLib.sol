@@ -30,11 +30,13 @@ pragma solidity ^0.4.18;
 
 import "./BasicMathLib.sol";
 import "./TokenLib.sol";
+import "./CrowdsaleToken.sol";
 import "./CrowdsaleLib.sol";
 import "./LinkedListLib.sol";
 
 library InteractiveCrowdsaleLib {
   using BasicMathLib for uint256;
+  using TokenLib for TokenLib.TokenStorage;
   using LinkedListLib for LinkedListLib.LinkedList;
   using CrowdsaleLib for CrowdsaleLib.CrowdsaleStorage;
 
@@ -50,15 +52,18 @@ library InteractiveCrowdsaleLib {
     // List of personal valuations, sorted from smallest to largest (from LinkedListLib)
     LinkedListLib.LinkedList valuationsList;
 
+    // Info holder for token creation
+    TokenLib.TokenStorage tokenInfo;
+
     uint256 endWithdrawalTime;   // time when manual withdrawals are no longer allowed
 
     // current total valuation of the sale
-    // actuall amount of ETH committed, taking into account partial purchases
+    // actual amount of ETH committed, taking into account partial purchases
     uint256 totalValuation;
 
     // amount of value committed at this valuation, cannot rely on owner balance
     // due to fluctations in commitment calculations needed after owner withdraws
-    // the amount of ETH committed, including total bids that will eventually get partial purchases 
+    // the amount of ETH committed, including total bids that will eventually get partial purchases
     uint256 valueCommitted;
 
     // the bucket that sits either at or just below current total valuation
@@ -66,6 +71,18 @@ library InteractiveCrowdsaleLib {
 
     // minimim amount that the sale needs to make to be successfull
     uint256 minimumRaise;
+
+    // base price of the tokens being sold
+    uint256 basePrice;
+
+    // percentage of total tokens being sold in this sale
+    uint8 percentBeingSold;
+
+    // base price of the tokens being sold
+    uint256 basePrice;
+
+    // percentage of total tokens being sold in this sale
+    uint8 percentBeingSold;
 
     bool ownerHasWithdrawnETH;
 
@@ -97,9 +114,8 @@ library InteractiveCrowdsaleLib {
   // Indicates when the price of the token changes
   event LogTokenPriceChange(uint256 amount, string Msg);
 
-  // Logs the current bucket that the valuation points to, the total valuation of the sale, and the amount of ETH committed, including total bids that will eventually get partial purchases 
+  // Logs the current bucket that the valuation points to, the total valuation of the sale, and the amount of ETH committed, including total bids that will eventually get partial purchases
   event BucketAndValuationAndCommitted(uint256 bucket, uint256 valuation, uint256 committed);
-
 
   /// @dev Called by a crowdsale contract upon creation.
   /// @param self Stored crowdsale from crowdsale contract
@@ -107,31 +123,38 @@ library InteractiveCrowdsaleLib {
   /// @param _saleData Array of 3 item arrays such that, in each 3 element
   /// array index-0 is timestamp, index-1 is price in cents at that time
   /// index-2 is address purchase valuation at that time, 0 if no address valuation
-  /// @param _fallbackExchangeRate Exchange rate of cents/ETH
   /// @param _endTime Timestamp of sale end time
-  /// @param _percentBurn Percentage of extra tokens to burn
-  /// @param _token Token being sold
   function init(InteractiveCrowdsaleStorage storage self,
                 address _owner,
                 uint256[] _saleData,
-                uint256 _fallbackExchangeRate,
                 uint256 _minimumRaise,
                 uint256 _endWithdrawalTime,
                 uint256 _endTime,
-                uint8 _percentBurn,
-                CrowdsaleToken _token) public
+                uint8 _percentBeingSold,
+                string _tokenName,
+                string _tokenSymbol,
+                uint8 _tokenDecimals,
+                bool _allowMinting) public
   {
     self.base.init(_owner,
                 _saleData,
-                _fallbackExchangeRate,
                 _endTime,
-                _percentBurn,
-                _token);
+                0, // no token burning for iico
+                CrowdsaleToken(0)); // no tokens created prior to iico
 
     require(_endWithdrawalTime < _endTime);
     require(_minimumRaise > 0);
+    require(_percentBeingSold > 0);
+
     self.minimumRaise = _minimumRaise;
     self.endWithdrawalTime = _endWithdrawalTime;
+    self.percentBeingSold = _percentBeingSold;
+    self.basePrice = _saleData[_saleData.length-3];
+
+    self.tokenInfo.name = _tokenName;
+    self.tokenInfo.symbol = _tokenSymbol;
+    self.tokenInfo.decimals = _tokenDecimals;
+    self.tokenInfo.stillMinting = _allowMinting;
   }
 
   /// @dev calculates the number of digits in a given number
@@ -378,7 +401,7 @@ library InteractiveCrowdsaleLib {
       if(loop){
         // if we're going to loop we move to the previous bucket
         (exists,_currentBucket) = self.valuationsList.getAdjacent(self.currentBucket, PREV);
-        while(_proposedCommit < _currentBucket){
+        while(_proposedCommit <= _currentBucket){
           // while we are proposed lower than the previous bucket we add commitments
           _proposedCommit += self.valuationSums[_currentBucket];
           // and iterate to the previous
@@ -409,8 +432,43 @@ library InteractiveCrowdsaleLib {
     require(now >= self.base.endTime);
     require(!self.ownerHasWithdrawnETH);
 
+    require(launchToken(self));
+
     self.ownerHasWithdrawnETH = true;
     self.base.ownerBalance = self.valueCommitted;
+  }
+
+  /// @dev Mints the token being sold by taking the percentage of the token supply
+  ///      being sold in this sale along with the valuation, derives all necessary
+  ///      values and then transfers owner tokens to the owner.
+  function launchToken(InteractiveCrowdsaleStorage storage self) internal returns (bool) {
+
+    uint256 _fullValue = (self.totalValuation*100)/uint256(self.percentBeingSold);
+    // add one token to supply so we're not short a token later
+    uint256 _supply = ((_fullValue/self.basePrice) + 1) * (10**uint256(self.tokenInfo.decimals));
+    uint256 _ownerTokens = _supply - ((_supply * uint256(self.percentBeingSold))/100);
+
+    self.base.token = new CrowdsaleToken(address(this),
+                                         self.tokenInfo.name,
+                                         self.tokenInfo.symbol,
+                                         self.tokenInfo.decimals,
+                                         _supply,
+                                         self.tokenInfo.stillMinting);
+
+    if(saleCanceled(self)){
+      self.base.token.transfer(self.base.owner, _supply);
+    } else {
+      self.base.token.transfer(self.base.owner, _ownerTokens);
+    }
+    self.base.token.changeOwner(self.base.owner);
+    self.base.startingTokenBalance = _supply - _ownerTokens;
+
+    return true;
+  }
+
+  function saleCanceled(InteractiveCrowdsaleStorage storage self) internal returns(bool canceled){
+    canceled = (self.totalValuation < self.minimumRaise) ||
+               ((now > (self.base.endTime + 30 days)) && !self.ownerHasWithdrawnETH);
   }
 
   /// @dev If the address' personal cap is below the pointer, refund them all their ETH.
@@ -420,12 +478,13 @@ library InteractiveCrowdsaleLib {
   function retreiveFinalResult(InteractiveCrowdsaleStorage storage self) internal returns (bool) {
     require(now > self.base.endTime);
     require(self.base.hasContributed[msg.sender] > 0);
+    require(self.ownerHasWithdrawnETH);
 
     uint256 numTokens;
     uint256 remainder;
     bool err;
 
-    if (self.valueCommitted < self.minimumRaise) {
+    if (saleCanceled(self)) {
       self.base.leftoverWei[msg.sender] += self.base.hasContributed[msg.sender];
       return true;
     }
@@ -468,14 +527,6 @@ library InteractiveCrowdsaleLib {
 
 
    /*Functions "inherited" from CrowdsaleLib library*/
-
-  function setTokenExchangeRate(InteractiveCrowdsaleStorage storage self, uint256 _exchangeRate) public returns (bool) {
-    return self.base.setTokenExchangeRate(_exchangeRate);
-  }
-
-  function setTokens(InteractiveCrowdsaleStorage storage self) internal returns (bool) {
-    return self.base.setTokens();
-  }
 
   function withdrawTokens(InteractiveCrowdsaleStorage storage self) internal returns (bool) {
     require(now > self.base.endTime);

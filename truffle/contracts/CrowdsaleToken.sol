@@ -36,11 +36,11 @@ contract CrowdsaleToken {
   TokenLib.TokenStorage public token;
 
   function CrowdsaleToken(address owner,
-                                string name,
-                                string symbol,
-                                uint8 decimals,
-                                uint256 initialSupply,
-                                bool allowMinting) public
+                          string name,
+                          string symbol,
+                          uint8 decimals,
+                          uint256 initialSupply,
+                          bool allowMinting) public
   {
     token.init(owner, name, symbol, decimals, initialSupply, allowMinting);
   }
@@ -85,8 +85,22 @@ contract CrowdsaleToken {
     return token.approve(spender, value);
   }
 
+  function approveChange(address spender, uint256 valueChange, bool increase)
+                         public returns (bool ok)
+  {
+    return token.approveChange(spender, valueChange, increase);
+  }
+
   function changeOwner(address newOwner) public returns (bool ok) {
     return token.changeOwner(newOwner);
+  }
+
+  function mintToken(uint256 amount) public returns (bool ok) {
+    return token.mintToken(amount);
+  }
+
+  function closeMint() public returns (bool ok) {
+    return token.closeMint();
   }
 
   function burnToken(uint256 amount) public returns (bool ok) {

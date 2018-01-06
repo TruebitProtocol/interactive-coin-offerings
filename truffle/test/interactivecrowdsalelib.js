@@ -19,9 +19,19 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
         endTime =  startTime + duration.years(2)
         afterEndTime = endTime + duration.seconds(1)
 
-        var purchaseData =[startTime,141,100,
-                           startTime + duration.weeks(1),200,100];
-        sale = await InteractiveCrowdsaleTestContract.new(accounts[5], purchaseData, 29000, 10000000, endWithdrawlTime, endTime, 50, CrowdsaleToken.address,{from:accounts[5]})
+        // first milestone is 120 tokens/eth and second is 100 tokens/eth with 18 decimal zeros
+        var purchaseData =[startTime,120000000000000000000,100,
+                           startTime + duration.weeks(1),100000000000000000000,100];
+        sale = await InteractiveCrowdsaleTestContract.new(accounts[5],
+                                                          purchaseData,
+                                                          1000000000000000000, // minimum in terms of wei
+                                                          endWithdrawlTime,
+                                                          endTime,
+                                                          50,
+                                                          "Jason Token",
+                                                          "TBT",
+                                                          18,
+                                                          false);
 
       })
 
@@ -30,14 +40,9 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
         owner.should.be.equal(accounts[5])
       })
 
-      it('has the correct exchange rate', async () => {
-        const rate = await sale.getExchangeRate()
-        rate.should.be.bignumber.equal(29000)
-      })
-
       it('has the correct minimum raise', async () => {
         const raise = await sale.getMinimumRaise()
-        raise.should.be.bignumber.equal(10000000)
+        raise.should.be.bignumber.equal(1000000000000000000)
       })
 
       it('has the correct endWithdrawalTime', async () => {
@@ -61,8 +66,8 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
       })
 
       it('has the correct burn percentage', async () => {
-        const burn = await sale.getPercentBurn();
-        assert.equal(burn.toNumber(), 50);
+        const percentSold = await sale.getPercentBeingSold();
+        assert.equal(percentSold.toNumber(), 50);
       })
 
       it('has the correct active status', async () => {
@@ -82,7 +87,17 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
 
         var purchaseData =[startTime,141,100,
                            startTime + duration.weeks(1),200,100];
-        sale = await InteractiveCrowdsaleTestContract.new(accounts[5], purchaseData, 29000, 10000000, endWithdrawlTime, endTime, 50, CrowdsaleToken.address,{from:accounts[5]})
+                           
+        sale = await InteractiveCrowdsaleTestContract.new(accounts[5],
+                                                         purchaseData,
+                                                         1000000000000000000, // minimum in terms of wei
+                                                         endWithdrawlTime,
+                                                         endTime,
+                                                         50,
+                                                         "Jason Token",
+                                                         "TBT",
+                                                         18,
+                                                         false);
       })
 
       it("'Can't submit bid if sale hasn't started", async () => {

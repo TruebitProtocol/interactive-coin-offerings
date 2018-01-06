@@ -14,22 +14,34 @@ contract InteractiveCrowdsaleTestContract {
 
   InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage sale;
 
+  event LogErrorMsg(uint256 amount, string Msg);
+
   function InteractiveCrowdsaleTestContract(
     address owner,
     uint256[] saleData,
-    uint256 fallbackExchangeRate,
     uint256 minimumRaise,
     uint256 endWithdrawalTime,
     uint256 endTime,
-    uint8 percentBurn,
-    CrowdsaleToken token) public
+    uint8 percentBeingSold,
+    string tokenName,
+    string tokenSymbol,
+    uint8 tokenDecimals,
+    bool allowMinting) public
   {
-  	sale.init(owner, saleData, fallbackExchangeRate, minimumRaise, endWithdrawalTime, endTime, percentBurn, token);
+  	sale.init(owner,
+              saleData,
+              minimumRaise,
+              endWithdrawalTime,
+              endTime,
+              percentBeingSold,
+              tokenName,
+              tokenSymbol,
+              tokenDecimals,
+              allowMinting);
   }
 
-  // fallback function can be used to buy tokens
-  function () public payable {
-    //receivePurchase();
+  function () public {
+    LogErrorMsg(0, 'Did not send correct data!');
   }
 
   function submitBid(uint256 _personalValuation, uint256 _listPredict) payable public returns (bool) {
@@ -60,28 +72,12 @@ contract InteractiveCrowdsaleTestContract {
   	return sale.crowdsaleEnded();
   }
 
-  function setTokenExchangeRate(uint256 _exchangeRate) public returns (bool) {
-    return sale.setTokenExchangeRate(_exchangeRate);
-  }
-
-  function setTokens() public returns (bool) {
-    return sale.setTokens();
-  }
-
   function getOwner() public view returns (address) {
     return sale.base.owner;
   }
 
-  function getMinimumRaise() public view returns (uint256) {
-    return sale.minimumRaise;
-  }
-
   function getTokensPerEth() public view returns (uint256) {
     return sale.base.tokensPerEth;
-  }
-
-  function getExchangeRate() public view returns (uint256) {
-    return sale.base.exchangeRate;
   }
 
   function getStartTime() public view returns (uint256) {
@@ -90,6 +86,10 @@ contract InteractiveCrowdsaleTestContract {
 
   function getEndTime() public view returns (uint256) {
     return sale.base.endTime;
+  }
+
+  function getMinimumRaise() public view returns (uint256) {
+    return sale.minimumRaise;
   }
 
   function getEndWithdrawlTime() public view returns (uint256) {
@@ -124,14 +124,14 @@ contract InteractiveCrowdsaleTestContract {
     return sale.getTokensSold();
   }
 
-  function getPercentBurn() public view returns (uint256) {
-    return sale.base.percentBurn;
+  function getPercentBeingSold() public view returns (uint256) {
+    return sale.percentBeingSold;
   }
 
   function getCurrentBucket() public view returns (uint256) {
     return sale.currentBucket;
   }
-  
+
   function getTotalValuation() public view returns (uint256) {
     return sale.totalValuation;
   }
