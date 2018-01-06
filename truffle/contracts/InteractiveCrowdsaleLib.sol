@@ -205,6 +205,7 @@ library InteractiveCrowdsaleLib {
     uint256 percentElapsed = (elapsed * 100)/bonusTime;
 
     uint256 currentBonus = self.priceBonusPercent - ((percentElapsed * self.priceBonusPercent)/100);
+    return currentBonus;
   }
 
   /// @dev Called when an address wants to submit bid to the sale
