@@ -210,14 +210,20 @@ contract("Moving pointer", (accounts) => {
     endWithdrawlTime = startTime + duration.weeks(100)
     endTime = startTime + duration.years(2)
     afterEndTime = endTime + duration.seconds(1)
-    console.log(startTime);
-    console.log(latestTime());
-    console.log(new Date().valueOf())
+
     var purchaseData =[startTime,141,100,
                        startTime + duration.weeks(1),200,100];
-    console.log(accounts[5],purchaseData,endWithdrawlTime,endTime,CrowdsaleToken.address);
-    sale = await InteractiveCrowdsaleTestContract.new(accounts[5], purchaseData, 29000, 10000000, endWithdrawlTime, endTime, 50, CrowdsaleToken.address,{from:accounts[5]})
 
+    sale = await InteractiveCrowdsaleTestContract.new(accounts[5],
+                                                     purchaseData,
+                                                     1000000000000000000, // minimum in terms of wei
+                                                     endWithdrawlTime,
+                                                     endTime,
+                                                     50,
+                                                     "Jason Token",
+                                                     "TBT",
+                                                     18,
+                                                     false);
   })
 
   it("Calculates moving pointer correctly", async () => {
