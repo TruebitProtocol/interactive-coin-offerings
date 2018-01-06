@@ -216,6 +216,7 @@ contract("Moving pointer", (accounts) => {
 
     sale = await InteractiveCrowdsaleTestContract.new(accounts[5],
                                                      purchaseData,
+                                                     20,
                                                      1000000000000000000, // minimum in terms of wei
                                                      endWithdrawlTime,
                                                      endTime,

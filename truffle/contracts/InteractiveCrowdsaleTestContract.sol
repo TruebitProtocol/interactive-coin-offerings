@@ -19,6 +19,7 @@ contract InteractiveCrowdsaleTestContract {
   function InteractiveCrowdsaleTestContract(
     address owner,
     uint256[] saleData,
+    uint256 priceBonusPercent,
     uint256 minimumRaise,
     uint256 endWithdrawalTime,
     uint256 endTime,
@@ -30,6 +31,7 @@ contract InteractiveCrowdsaleTestContract {
   {
   	sale.init(owner,
               saleData,
+              priceBonusPercent,
               minimumRaise,
               endWithdrawalTime,
               endTime,
