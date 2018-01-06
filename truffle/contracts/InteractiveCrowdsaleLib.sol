@@ -30,11 +30,13 @@ pragma solidity ^0.4.18;
 
 import "./BasicMathLib.sol";
 import "./TokenLib.sol";
+import "./CrowdsaleToken.sol";
 import "./CrowdsaleLib.sol";
 import "./LinkedListLib.sol";
 
 library InteractiveCrowdsaleLib {
   using BasicMathLib for uint256;
+  using TokenLib for TokenLib.TokenStorage;
   using LinkedListLib for LinkedListLib.LinkedList;
   using CrowdsaleLib for CrowdsaleLib.CrowdsaleStorage;
 
@@ -50,6 +52,9 @@ library InteractiveCrowdsaleLib {
     // List of personal valuations, sorted from smallest to largest (from LinkedListLib)
     LinkedListLib.LinkedList valuationsList;
 
+    // Info holder for token creation
+    TokenLib.TokenStorage tokenInfo;
+
     uint256 endWithdrawalTime;   // time when manual withdrawals are no longer allowed
 
     // current total valuation of the sale
@@ -58,7 +63,7 @@ library InteractiveCrowdsaleLib {
 
     // amount of value committed at this valuation, cannot rely on owner balance
     // due to fluctations in commitment calculations needed after owner withdraws
-    // the amount of ETH committed, including total bids that will eventually get partial purchases 
+    // the amount of ETH committed, including total bids that will eventually get partial purchases
     uint256 valueCommitted;
 
     // the bucket that sits either at or just below current total valuation
@@ -66,6 +71,12 @@ library InteractiveCrowdsaleLib {
 
     // minimim amount that the sale needs to make to be successfull
     uint256 minimumRaise;
+    
+    // base price of the tokens being sold
+    uint256 basePrice;
+
+    // percentage of total tokens being sold in this sale
+    uint8 percentBeingSold;
 
     bool ownerHasWithdrawnETH;
 
@@ -97,9 +108,8 @@ library InteractiveCrowdsaleLib {
   // Indicates when the price of the token changes
   event LogTokenPriceChange(uint256 amount, string Msg);
 
-  // Logs the current bucket that the valuation points to, the total valuation of the sale, and the amount of ETH committed, including total bids that will eventually get partial purchases 
+  // Logs the current bucket that the valuation points to, the total valuation of the sale, and the amount of ETH committed, including total bids that will eventually get partial purchases
   event BucketAndValuationAndCommitted(uint256 bucket, uint256 valuation, uint256 committed);
-
 
   /// @dev Called by a crowdsale contract upon creation.
   /// @param self Stored crowdsale from crowdsale contract
@@ -118,20 +128,32 @@ library InteractiveCrowdsaleLib {
                 uint256 _minimumRaise,
                 uint256 _endWithdrawalTime,
                 uint256 _endTime,
-                uint8 _percentBurn,
-                CrowdsaleToken _token) public
+                uint8 _percentBeingSold,
+                string _tokenName,
+                string _tokenSymbol,
+                uint8 _tokenDecimals,
+                bool _allowMinting) public
   {
     self.base.init(_owner,
                 _saleData,
                 _fallbackExchangeRate,
                 _endTime,
-                _percentBurn,
-                _token);
+                0, // no token burning for iico
+                0); // no tokens created prior to iico
 
     require(_endWithdrawalTime < _endTime);
     require(_minimumRaise > 0);
+    require(_percentBeingSold > 0);
+
     self.minimumRaise = _minimumRaise;
     self.endWithdrawalTime = _endWithdrawalTime;
+    self.percentBeingSold = _percentBeingSold;
+    self.basePrice = _saleData[_saleData.length-3]
+
+    self.tokenInfo.name = _tokenName;
+    self.tokenInfo.symbol = _tokenSymbol;
+    self.tokenInfo.decimals = _tokenDecimals;
+    self.tokenInfo.stillMinting = _allowMinting;
   }
 
   /// @dev calculates the number of digits in a given number
@@ -409,8 +431,32 @@ library InteractiveCrowdsaleLib {
     require(now >= self.base.endTime);
     require(!self.ownerHasWithdrawnETH);
 
+    require(launchToken());
+
     self.ownerHasWithdrawnETH = true;
     self.base.ownerBalance = self.valueCommitted;
+  }
+
+  /// @dev Mints the token being sold by taking the percentage of the token supply
+  ///      being sold in this sale along with the valuation, derives all necessary
+  ///      values and then transfers owner tokens to the owner.
+  function launchToken() internal returns (bool) {
+
+    uint256 _fullValue = (self.totalValuation*100)/self.percentBeingSold;
+    uint256 _supply = (_fullValue/self.basePrice) * (10**self.tokenInfo.decimals);
+    uint256 _ownerTokens = _supply - ((_supply * self.percentBeingSold)/100);
+
+    self.base.token = new CrowdsaleToken(address(this),
+                                         self.tokenInfo.name,
+                                         self.tokenInfo.symbol,
+                                         self.tokenInfo.decimals,
+                                         _supply,
+                                         self.tokenInfo.stillMinting);
+
+    self.base.token.transfer(self.base.owner, _ownerTokens);
+    self.base.changeOwner(self.base.owner);
+
+    return true;
   }
 
   /// @dev If the address' personal cap is below the pointer, refund them all their ETH.
