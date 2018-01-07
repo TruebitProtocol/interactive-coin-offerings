@@ -5,7 +5,7 @@ pragma solidity ^0.4.18;
  * @author Majoolr.io
  *
  * version 1.0.0
- * Copyright (c) 2017 Majoolr, LLC
+ * Copyright (c) 2017 Modular, LLC
  * The MIT License (MIT)
  * https://github.com/Majoolr/ethereum-libraries/blob/master/LICENSE
  * 

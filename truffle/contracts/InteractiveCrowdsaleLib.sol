@@ -5,9 +5,8 @@ pragma solidity ^0.4.18;
  * @author Majoolr.io
  *
  * version 1.0.0
- * Copyright (c) 2017 Majoolr, LLC
+ * Copyright (c) 2017 Modular, LLC
  * The MIT License (MIT)
- * https://github.com/Majoolr/ethereum-libraries/blob/master/LICENSE
  *
  * The InteractiveCrowdsale Library provides functionality to create a crowdsale
  * based on the white paper initially proposed by Jason Teutsch and Vitalik
@@ -15,8 +14,8 @@ pragma solidity ^0.4.18;
  * further information.
  *
  * This library was developed in a collaborative effort among many organizations
- * including TrueBit, Majoolr, Zeppelin, and Consensys.
- * For further information: truebit.io, majoolr.io, zeppelin.solutions,
+ * including TrueBit, Modular, Zeppelin, and Consensys.
+ * For further information: truebit.io, modular.network, zeppelin.solutions,
  * consensys.net
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
@@ -199,6 +198,9 @@ library InteractiveCrowdsaleLib {
     return (numTokens,remainder);
   }
 
+  /// @dev Called when an address wants to submit bid to the sale
+  /// @param self Stored crowdsale from crowdsale contract
+  /// @return currentBonus percentage of the bonus that is applied for the purchase
   function getCurrentBonus(InteractiveCrowdsaleStorage storage self) internal returns (uint256){
     uint256 bonusTime = self.endWithdrawalTime - self.base.startTime;
     uint256 elapsed = now - self.base.startTime;
@@ -330,6 +332,7 @@ library InteractiveCrowdsaleLib {
     require(self.personalCaps[msg.sender] > 0);
 
     uint256 refundWei;
+    bool err;
     // cannot withdraw after compulsory withdraw period is over unless the bid's
     // valuation is below the cutoff
     if (now >= self.endWithdrawalTime) {
@@ -338,9 +341,17 @@ library InteractiveCrowdsaleLib {
       refundWei = self.base.hasContributed[msg.sender];
 
     } else {
-      //uint256 multiplierPercent = (100*((self.endWithdrawalTime+self.base.milestoneTimes[0]) - now))/self.endWithdrawalTime;
-      //refundWei = (multiplierPercent*self.base.hasContributed[msg.sender])/100;
-      refundWei = self.base.hasContributed[msg.sender];
+      uint256 multiplierPercent =  (100*((self.endWithdrawalTime - self.base.startTime) - (now - self.base.startTime)))/(self.endWithdrawalTime-self.base.startTime);//(100*(self.endWithdrawalTime - now))/self.endWithdrawalTime;
+      refundWei = (multiplierPercent*self.base.hasContributed[msg.sender])/100;
+
+      // forfeit a portion of the token bonus also
+
+      // multiplierPercent = 100 - multiplierPercent;
+
+      // uint256 pricePenalty = self.pricePurchasedAt[msg.sender] - ((self.pricePurchasedAt[msg.sender] - self.base.tokensPerEth)/3);
+
+      //self.pricePurchasedAt[msg.sender] = 
+
     }
 
     // Put the sender's contributed wei into the leftoverWei mapping for later withdrawal

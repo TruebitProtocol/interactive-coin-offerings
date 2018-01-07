@@ -31,8 +31,17 @@ function findPredictedValue(array, item) {
 }
 
 
-function getRandomValueInEther(max, min){
+function getRandomValueInEther(min, max){
   return Math.floor(Math.random() * (max - min) + min) //* Math.pow(10,18)
+}
+
+function getNumDigits(num) {
+  let _digits = 0;
+    while (num != 0) {
+      num = Math.floor(num/10);
+      _digits++;
+    }
+    return _digits;
 }
 
 function getSubmitOrWithdraw(){
@@ -44,6 +53,14 @@ function generateEmptyMappings(size) {
   var a = [];
   for(var i=0; i < size; i++){
     a.push(0);
+  }
+  return a;
+}
+
+function generateEmptyBoolMappings(size) {
+  var a = [];
+  for(var i=0; i < size; i++){
+    a.push(false);
   }
   return a;
 }
@@ -91,8 +108,11 @@ async function simulate(accounts, sale){
   let calculatedValuationPointer = [];
 
   //Arrays that smulate mappings from address(position in the accounts array) to any value;
-  var pricePurchasedAt, personalCaps =  generateEmptyMappings(accounts.length);;
+  var pricePurchasedAt, personalCaps =  generateEmptyMappings(accounts.length);
 
+  var initialContribution =  generateEmptyMappings(accounts.length);
+
+  var addressWithdrew = generateEmptyBoolMappings(accounts.length);
 
   var valuationsList = [0];
 
@@ -110,15 +130,27 @@ async function simulate(accounts, sale){
   var valuation;
   var withdrawValue;
 
+  var contribution;
+
   for(var i = 0; i < accounts.length; i++){
+    if ((i+1)%8 == 0) { await increaseTimeTo(latestTime() + duration.weeks(10)); }
     let submit;
     if((i === 0) || (i === 6)){ submit = true; } else { submit = getSubmitOrWithdraw(); }
 
     if(!submit){
       //console.log('withdraw');
+      addressWithdrew[i-1] = true;
+      //console.log(addressWithdrew[i-1]);
+      // contribution = await sale.getContribution(accounts[i-1]);
+      // contribution = contribution.toNumber();
+      // console.log(contribution);
+
       await sale.withdrawBid({from: accounts[i-1]});
       withdrawValue = await sale.getLeftoverWei(accounts[i-1]);
       withdrawValue = withdrawValue.toNumber();
+      // contribution = await sale.getContribution(accounts[i-1]);
+      // contribution = contribution.toNumber();
+      // console.log(contribution);
       valuationSums[cap] -=  withdrawValue;
       numBidsAtValuation[cap]--;
       valueCommitted -= withdrawValue;
@@ -127,10 +159,13 @@ async function simulate(accounts, sale){
     }
 
     var temp = valuationsList.slice();
-    value = getRandomValueInEther(1,10);
-    cap = getRandomValueInEther(10, 200);
+    value = getRandomValueInEther(10,100);
+    cap = getRandomValueInEther(100, 2000);
+    var numDigits = getNumDigits(cap);
+    cap = Math.floor(cap/Math.pow(10,(numDigits-3)));
     var spot = findPredictedValue(temp, cap);
     personalCaps[i] = cap;
+    initialContribution[i] = value;
 
     let snapshot = {
       "iteraction": i,
@@ -144,6 +179,9 @@ async function simulate(accounts, sale){
     };
 
       try{
+          console.log('cap '+cap);
+          console.log('value '+value);
+          console.log('spot '+spot);
           bid = await sale.submitBid(cap, spot, {from: accounts[i], value: value});
           valuationsList = insertInOrder(valuationsList, cap);
           valueCommitted += value;
@@ -164,8 +202,6 @@ async function simulate(accounts, sale){
 
           valuation = await sale.getCurrentBucket();
           fetchedValuationPointer.push(valuation.toNumber());
-          //console.log('cap '+cap);
-          //console.log('value '+value);
           //console.log(valuationSums);
           let calcObject = calculateValuationPointer(valueCommitted, valuationsList, valuationSums)
           snapshot.calculatedPointer = calcObject.pointer;
@@ -197,13 +233,15 @@ async function simulate(accounts, sale){
     "interactionsSnapshots": interactionsSnapshots,
     "fetchedValuationPointer": fetchedValuationPointer,
     "calculatedValuationPointer": calculatedValuationPointer,
+    "addressWithdrew": addressWithdrew,
+    "initialContribution": initialContribution,
   }
 
 
 }
 
 contract("Moving pointer", (accounts) => {
-  let sale, startTime, endWithdrawlTime, endTime, afterEndTime;
+  let sale, startTime, endWithdrawlTime, endTime, afterEndTime, simulation;
 
   before(async function () {
     startTime = latestTime() + duration.weeks(7) + duration.hours(4);
@@ -230,12 +268,39 @@ contract("Moving pointer", (accounts) => {
   it("Calculates moving pointer correctly", async () => {
 
     await increaseTimeTo(startTime);
-    let simulation = await simulate(accounts, sale);
+    simulation = await simulate(accounts, sale);
     console.log("fetched Pointers: ", simulation.fetchedValuationPointer);
     console.log("calculated pointers", simulation.calculatedValuationPointer);
     for(var i = 0; i < simulation.fetchedValuationPointer.length; i++){
       assert.equal(simulation.fetchedValuationPointer[i], simulation.calculatedValuationPointer[i], "Results from fetched value differ from calculated value");
     }
+
+  })
+
+  it("Has correct ETH refunds during the sale", async () => {
+    var ethBalance
+
+    for(var i = 0; i < accounts.length; i++){
+      ethBalance = await sale.getLeftoverWei(accounts[i])
+      //console.log(accounts[i]+": "+ethBalance)
+      if (simulation.addressWithdrew[i] == false) {
+        //console.log("no withdrawal")
+        assert.equal(ethBalance.valueOf(),0, "Addresses that didn't withdraw should have a leftover wei balance of zero!")
+      } else {
+        //console.log("withdrawal")
+        assert.isAbove(ethBalance.valueOf(),0,"Addresses that did manual withdraws should have a nonzero leftover wei balance!")
+        assert.isBelow(ethBalance.valueOf(),simulation.initialContribution[i],"Addresses that withdrew should has withdrawn less ETH than they contributed!");
+      }
+    }
+
+  })
+
+  it("Has correct Token purchases after the sale ends", async () => {
+    var tokenBalance
+
+    await increaseTimeTo(afterEndTime);
+
+    
 
   })
 })
