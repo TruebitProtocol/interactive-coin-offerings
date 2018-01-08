@@ -118,6 +118,10 @@ contract InteractiveCrowdsaleTestContract {
     return sale.getPersonalCap(_bidder);
   }
 
+  function getPrice(address _bidder) public view returns (uint256) {
+    return sale.pricePurchasedAt[_bidder];
+  }
+
   function getSaleData(uint256 timestamp) public view returns (uint256[3]) {
     return sale.getSaleData(timestamp);
   }

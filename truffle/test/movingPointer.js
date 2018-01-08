@@ -300,7 +300,7 @@ contract("Moving pointer", (accounts) => {
 
     await increaseTimeTo(afterEndTime);
 
-    
+
 
   })
 })
