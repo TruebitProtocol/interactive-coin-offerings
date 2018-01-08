@@ -341,28 +341,39 @@ library InteractiveCrowdsaleLib {
       refundWei = self.base.hasContributed[msg.sender];
 
     } else {
-      uint256 multiplierPercent =  (100*((self.endWithdrawalTime - self.base.startTime) - (now - self.base.startTime)))/(self.endWithdrawalTime-self.base.startTime);//(100*(self.endWithdrawalTime - now))/self.endWithdrawalTime;
+      uint256 t = self.endWithdrawalTime - self.base.startTime;
+      uint256 s = now - self.base.startTime;
+      uint256 pa = self.pricePurchasedAt[msg.sender];
+      uint256 pu = self.base.tokensPerEth;
+      uint256 multiplierPercent =  (100*(t - s))/t;//(100*(self.endWithdrawalTime - now))/self.endWithdrawalTime;
       refundWei = (multiplierPercent*self.base.hasContributed[msg.sender])/100;
 
+      // Put the sender's contributed wei into the leftoverWei mapping for later withdrawal
+      self.base.leftoverWei[msg.sender] += refundWei;
+
+      // subtract the bidder's refund from its total contribution
+      self.base.hasContributed[msg.sender] -= refundWei;
+
+      self.valuationSums[self.personalCaps[msg.sender]] -= refundWei;
+      self.numBidsAtValuation[self.personalCaps[msg.sender]] -= 1;
+
+      self.pricePurchasedAt[msg.sender] = pa-((pa-pu)/3);
+
+      /*****************************
+      The rest of this can go I think because finalizing the sale
+      will use the new hasContributed and new pricePurchasedAt to derive the tokens
+      ******************************/
       // forfeit a portion of the token bonus also
 
       // multiplierPercent = 100 - multiplierPercent;
 
       // uint256 pricePenalty = self.pricePurchasedAt[msg.sender] - ((self.pricePurchasedAt[msg.sender] - self.base.tokensPerEth)/3);
 
-      //self.pricePurchasedAt[msg.sender] = 
+      //self.pricePurchasedAt[msg.sender] =
 
     }
 
-    // Put the sender's contributed wei into the leftoverWei mapping for later withdrawal
-    self.base.leftoverWei[msg.sender] += refundWei;
-
-    // subtract the bidder's refund from its total contribution
-    self.base.hasContributed[msg.sender] -= refundWei;
-
     // subtract the bid from the sum of bids at this valuation
-    self.valuationSums[self.personalCaps[msg.sender]] -= refundWei;
-    self.numBidsAtValuation[self.personalCaps[msg.sender]] -= 1;
 
     uint256 _proposedCommit;
     uint256 _proposedValue;
