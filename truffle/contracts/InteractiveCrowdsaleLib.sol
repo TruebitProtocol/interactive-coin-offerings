@@ -201,7 +201,7 @@ library InteractiveCrowdsaleLib {
   /// @dev Called when an address wants to submit bid to the sale
   /// @param self Stored crowdsale from crowdsale contract
   /// @return currentBonus percentage of the bonus that is applied for the purchase
-  function getCurrentBonus(InteractiveCrowdsaleStorage storage self) internal returns (uint256){
+  function getCurrentBonus(InteractiveCrowdsaleStorage storage self) internal view returns (uint256){
     uint256 bonusTime = self.endWithdrawalTime - self.base.startTime;
     uint256 elapsed = now - self.base.startTime;
     uint256 percentElapsed = (elapsed * 100)/bonusTime;
@@ -332,7 +332,6 @@ library InteractiveCrowdsaleLib {
     require(self.personalCaps[msg.sender] > 0);
 
     uint256 refundWei;
-    bool err;
     // cannot withdraw after compulsory withdraw period is over unless the bid's
     // valuation is below the cutoff
     if (now >= self.endWithdrawalTime) {
@@ -341,11 +340,19 @@ library InteractiveCrowdsaleLib {
       refundWei = self.base.hasContributed[msg.sender];
 
     } else {
-      uint256 t = self.endWithdrawalTime - self.base.startTime;
-      uint256 s = now - self.base.startTime;
-      uint256 pa = self.pricePurchasedAt[msg.sender];
-      uint256 pu = self.base.tokensPerEth;
-      uint256 multiplierPercent =  (100*(t - s))/t;//(100*(self.endWithdrawalTime - now))/self.endWithdrawalTime;
+      /***********************************************************************
+      The following lines were commented out due to stack depth, but they represent
+      the variables and calculations from the paper. The actual code is the same
+      thing spelled out using current variables
+      ************************************************************************/
+      //uint256 t = self.endWithdrawalTime - self.base.startTime;
+      //uint256 s = now - self.base.startTime;
+      //uint256 pa = self.pricePurchasedAt[msg.sender];
+      //uint256 pu = self.base.tokensPerEth;
+      //uint256 multiplierPercent =  (100*(t - s))/t;
+      //self.pricePurchasedAt = pa-((pa-pu)/3)
+
+      uint256 multiplierPercent =  (100*(self.endWithdrawalTime - now))/(self.endWithdrawalTime-self.base.startTime);
       refundWei = (multiplierPercent*self.base.hasContributed[msg.sender])/100;
 
       // Put the sender's contributed wei into the leftoverWei mapping for later withdrawal
@@ -357,7 +364,7 @@ library InteractiveCrowdsaleLib {
       self.valuationSums[self.personalCaps[msg.sender]] -= refundWei;
       self.numBidsAtValuation[self.personalCaps[msg.sender]] -= 1;
 
-      self.pricePurchasedAt[msg.sender] = pa-((pa-pu)/3);
+      self.pricePurchasedAt[msg.sender] = self.pricePurchasedAt[msg.sender]-((self.pricePurchasedAt[msg.sender]-self.base.tokensPerEth)/3);
 
       /*****************************
       The rest of this can go I think because finalizing the sale
@@ -497,7 +504,6 @@ library InteractiveCrowdsaleLib {
 
     uint256 numTokens;
     uint256 remainder;
-    bool err;
 
     if (saleCanceled(self)) {
       self.base.leftoverWei[msg.sender] += self.base.hasContributed[msg.sender];
