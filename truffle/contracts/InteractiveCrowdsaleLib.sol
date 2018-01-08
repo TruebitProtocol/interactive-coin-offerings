@@ -195,8 +195,6 @@ library InteractiveCrowdsaleLib {
     remainder = weiTokens % 1000000000000000000;
     remainder = remainder / _price;
 
-    numTokens = weiTokens;
-
     // make sure there are enough tokens available to satisfy the bid
     assert(numTokens <= self.base.token.balanceOf(this));
 

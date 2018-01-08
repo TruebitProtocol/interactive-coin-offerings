@@ -244,7 +244,7 @@ library CrowdsaleLib {
 
     uint256 _tokenBalance;
 
-    _tokenBalance = self.token.balanceOf(this);
+    _tokenBalance = self.ownerBalance;
     self.withdrawTokensMap[msg.sender] = _tokenBalance;
     self.startingTokenBalance = _tokenBalance;
     self.tokensSet = true;
