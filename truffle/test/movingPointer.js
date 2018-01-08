@@ -1,4 +1,4 @@
-/*import {advanceBlock} from './helpers/advanceToBlock'
+import {advanceBlock} from './helpers/advanceToBlock'
 import {increaseTimeTo, duration} from './helpers/increaseTime'
 import latestTime from './helpers/latestTime'
 const { should } = require('./helpers/utils')
@@ -304,4 +304,3 @@ contract("Moving pointer", (accounts) => {
 
   })
 })
-*/

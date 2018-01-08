@@ -90,6 +90,9 @@ library InteractiveCrowdsaleLib {
 
     // the valuation cap that each address has submitted
     mapping (address => uint256) personalCaps;
+
+    // shows if an address has done a manual withdrawal
+    mapping (address => bool) hasManuallyWithdrawn;
   }
 
   // Indicates when a bidder submits a bid to the crowdsale
@@ -340,6 +343,7 @@ library InteractiveCrowdsaleLib {
       refundWei = self.base.hasContributed[msg.sender];
 
     } else {
+      require(!self.hasManuallyWithdrawn[msg.sender]);
       /***********************************************************************
       The following lines were commented out due to stack depth, but they represent
       the variables and calculations from the paper. The actual code is the same
@@ -366,17 +370,7 @@ library InteractiveCrowdsaleLib {
 
       self.pricePurchasedAt[msg.sender] = self.pricePurchasedAt[msg.sender]-((self.pricePurchasedAt[msg.sender]-self.base.tokensPerEth)/3);
 
-      /*****************************
-      The rest of this can go I think because finalizing the sale
-      will use the new hasContributed and new pricePurchasedAt to derive the tokens
-      ******************************/
-      // forfeit a portion of the token bonus also
-
-      // multiplierPercent = 100 - multiplierPercent;
-
-      // uint256 pricePenalty = self.pricePurchasedAt[msg.sender] - ((self.pricePurchasedAt[msg.sender] - self.base.tokensPerEth)/3);
-
-      //self.pricePurchasedAt[msg.sender] =
+      self.hasManuallyWithdrawn[msg.sender] = true;
 
     }
 
