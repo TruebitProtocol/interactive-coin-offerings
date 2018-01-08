@@ -64,9 +64,14 @@ contract("Withdrawing ETH", (accounts) => {
   })
 
   it("Denies eth withdrawal after a previous withdrawal", async () => {
+    let error = false;
     try{
-
+      await sale.withdrawBid({from:accounts[2]})
+    } catch(e) {
+      error = true
     }
+
+    assert.isTrue(error, 'Bid withdraw should throw and error if the sender has already manually withdrawn');
   })
 
   it("Denies eth withdrawal after withdrawal lock", async () => {
