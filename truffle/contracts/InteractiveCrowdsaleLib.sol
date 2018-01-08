@@ -457,9 +457,9 @@ library InteractiveCrowdsaleLib {
   function launchToken(InteractiveCrowdsaleStorage storage self) internal returns (bool) {
 
     uint256 _fullValue = (self.totalValuation*100)/uint256(self.percentBeingSold);
-    uint256 _bonusValue = (_fullValue * (100 + self.priceBonusPercent))/100;
-    uint256 _supply = (_fullValue * self.base.tokensPerEth) * (10**uint256(self.tokenInfo.decimals));
-    uint256 _bonusTokens = (_bonusValue * self.base.tokensPerEth) * (10**uint256(self.tokenInfo.decimals));
+    uint256 _bonusValue = ((self.totalValuation * (100 + self.priceBonusPercent))/100) - self.totalValuation;
+    uint256 _supply = (_fullValue * self.base.tokensPerEth)/1000000000000000000;
+    uint256 _bonusTokens = (_bonusValue * self.base.tokensPerEth)/1000000000000000000;
     uint256 _ownerTokens = _supply - ((_supply * uint256(self.percentBeingSold))/100);
     uint256 _totalSupply = _supply + _bonusTokens;
 
