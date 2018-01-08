@@ -70,14 +70,17 @@ contract("Withdrawing ETH", (accounts) => {
   })
 
   it("Denies eth withdrawal after withdrawal lock", async () => {
+    let error = false;
     await sale.submitBid(150000000000000000000, 150000000000000000000, {from: accounts[3], value: 1000});
     await increaseTimeTo(latestTime() + duration.days(4))
 
     try{
       await sale.withdrawBid({from: accounts[3]})
     } catch(e) {
-      console.log(e)
+      error = true;
     }
+
+    assert.isTrue(error, 'Bid withdraw should throw an error after withdrawal lock')
   })
 
 })
