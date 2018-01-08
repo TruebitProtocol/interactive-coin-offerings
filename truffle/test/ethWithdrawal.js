@@ -58,9 +58,26 @@ contract("Withdrawing ETH", (accounts) => {
 
     await increaseTimeTo(latestTime() + duration.days(1));
     await sale.withdrawBid({from: accounts[2]})
-    
+
     const secondPrice = await sale.getPrice(accounts[2]);
     assert.equal(secondPrice.toNumber(), 1060000000000000000000, 'Bonus should be reduced by 1/3 to 6% bonus');
+  })
+
+  it("Denies eth withdrawal after a previous withdrawal", async () => {
+    try{
+
+    }
+  })
+
+  it("Denies eth withdrawal after withdrawal lock", async () => {
+    await sale.submitBid(150000000000000000000, 150000000000000000000, {from: accounts[3], value: 1000});
+    await increaseTimeTo(latestTime() + duration.days(4))
+
+    try{
+      await sale.withdrawBid({from: accounts[3]})
+    } catch(e) {
+      console.log(e)
+    }
   })
 
 })
