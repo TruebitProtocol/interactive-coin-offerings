@@ -71,7 +71,7 @@ contract("Withdrawing ETH", (accounts) => {
       error = true
     }
 
-    assert.isTrue(error, 'Bid withdraw should throw and error if the sender has already manually withdrawn');
+    assert.isTrue(error, 'Bid withdraw should throw an error if the sender has already manually withdrawn');
   })
 
   it("Denies eth withdrawal after withdrawal lock", async () => {

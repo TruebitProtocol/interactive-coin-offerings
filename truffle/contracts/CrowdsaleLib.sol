@@ -209,7 +209,7 @@ library CrowdsaleLib {
     require(msg.sender == self.owner);
     require(self.ownerBalance > 0);
 
-    uint256 amount = self.ownerBalance;
+    uint256 amount = this.balance;
     self.ownerBalance = 0;
     self.owner.transfer(amount);
     LogOwnerEthWithdrawn(msg.sender,amount,"Crowdsale owner has withdrawn all funds!");

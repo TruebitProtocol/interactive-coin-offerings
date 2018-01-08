@@ -195,6 +195,8 @@ library InteractiveCrowdsaleLib {
     remainder = weiTokens % 1000000000000000000;
     remainder = remainder / _price;
 
+    numTokens = weiTokens;
+
     // make sure there are enough tokens available to satisfy the bid
     assert(numTokens <= self.base.token.balanceOf(this));
 
@@ -342,6 +344,8 @@ library InteractiveCrowdsaleLib {
 
       refundWei = self.base.hasContributed[msg.sender];
 
+      self.base.hasContributed[msg.sender] = 0;
+
     } else {
       require(!self.hasManuallyWithdrawn[msg.sender]);
       /***********************************************************************
@@ -359,12 +363,6 @@ library InteractiveCrowdsaleLib {
       uint256 multiplierPercent =  (100*(self.endWithdrawalTime - now))/(self.endWithdrawalTime-self.base.startTime);
       refundWei = (multiplierPercent*self.base.hasContributed[msg.sender])/100;
 
-      // Put the sender's contributed wei into the leftoverWei mapping for later withdrawal
-      self.base.leftoverWei[msg.sender] += refundWei;
-
-      // subtract the bidder's refund from its total contribution
-      self.base.hasContributed[msg.sender] -= refundWei;
-
       self.valuationSums[self.personalCaps[msg.sender]] -= refundWei;
       self.numBidsAtValuation[self.personalCaps[msg.sender]] -= 1;
 
@@ -374,7 +372,12 @@ library InteractiveCrowdsaleLib {
 
     }
 
-    // subtract the bid from the sum of bids at this valuation
+    // Put the sender's contributed wei into the leftoverWei mapping for later withdrawal
+    self.base.leftoverWei[msg.sender] += refundWei;
+
+    // subtract the bidder's refund from its total contribution
+    self.base.hasContributed[msg.sender] -= refundWei;
+
 
     uint256 _proposedCommit;
     uint256 _proposedValue;
@@ -434,7 +437,7 @@ library InteractiveCrowdsaleLib {
       self.valueCommitted = _proposedCommit;
     }
 
-    LogBidWithdrawn(msg.sender, self.base.hasContributed[msg.sender], self.personalCaps[msg.sender]);
+    LogBidWithdrawn(msg.sender, refundWei, self.personalCaps[msg.sender]);
     return true;
     BucketAndValuationAndCommitted(self.currentBucket, self.totalValuation, self.valueCommitted);
   }
@@ -491,9 +494,9 @@ library InteractiveCrowdsaleLib {
   ///      if it is above the pointer, calculate tokens purchased and refund leftoever ETH
   /// @param self Stored crowdsale from crowdsale contract
   /// @return bool success if the contract runs successfully
-  function retreiveFinalResult(InteractiveCrowdsaleStorage storage self) internal returns (bool) {
+  function retreiveFinalResult(InteractiveCrowdsaleStorage storage self) public returns (bool) {
     require(now > self.base.endTime);
-    require(self.base.hasContributed[msg.sender] > 0);
+    require(self.personalCaps[msg.sender] > 0);
     require(self.ownerHasWithdrawnETH);
 
     uint256 numTokens;
@@ -501,13 +504,19 @@ library InteractiveCrowdsaleLib {
 
     if (saleCanceled(self)) {
       self.base.leftoverWei[msg.sender] += self.base.hasContributed[msg.sender];
+      self.base.hasContributed[msg.sender] = 0;
+      LogErrorMsg(self.totalValuation, "totalValuation has not reached the minimumRaise. All bids have been refunded!");
       return true;
     }
 
     if (self.personalCaps[msg.sender] < self.totalValuation) {
 
       self.base.leftoverWei[msg.sender] += self.base.hasContributed[msg.sender];
-      return true;
+
+      // set hasContributed to 0 to prevent participant from calling this over and over
+      self.base.hasContributed[msg.sender] = 0;
+
+      return self.base.withdrawLeftoverWei();
 
     } else if (self.personalCaps[msg.sender] == self.totalValuation) {
       uint256 q;
@@ -525,6 +534,9 @@ library InteractiveCrowdsaleLib {
       self.base.hasContributed[msg.sender] -= refundAmount;
     }
 
+    LogErrorMsg(self.base.hasContributed[msg.sender],"contribution");
+    LogErrorMsg(self.pricePurchasedAt[msg.sender],"price");
+
     // calculate the number of tokens that the bidder purchased
     (numTokens, remainder) = calculateTokenPurchase(self,self.base.hasContributed[msg.sender],self.pricePurchasedAt[msg.sender]);
 
@@ -540,7 +552,13 @@ library InteractiveCrowdsaleLib {
     uint256 _leftoverBonus = _fullBonus - numTokens;
     self.base.token.burnToken(_leftoverBonus);
 
-    return true;
+    self.base.hasContributed[msg.sender] = 0;
+
+
+    self.base.withdrawTokens();
+
+    self.base.withdrawLeftoverWei();
+
   }
 
 
@@ -550,15 +568,10 @@ library InteractiveCrowdsaleLib {
   function withdrawTokens(InteractiveCrowdsaleStorage storage self) internal returns (bool) {
     require(now > self.base.endTime);
 
-    retreiveFinalResult(self);
-
     return self.base.withdrawTokens();
   }
 
   function withdrawLeftoverWei(InteractiveCrowdsaleStorage storage self) internal returns (bool) {
-    if (now > self.base.endTime) {
-      retreiveFinalResult(self);
-    }
 
     return self.base.withdrawLeftoverWei();
   }

@@ -62,6 +62,10 @@ contract InteractiveCrowdsaleTestContract {
     return sale.withdrawLeftoverWei();
   }
 
+  function retreiveFinalResult() public returns (bool) {
+    return sale.retreiveFinalResult();
+  }
+
   function finalizeSale() public returns (bool) {
     return sale.finalizeSale();
   }
