@@ -24,6 +24,7 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
                            startTime + duration.weeks(1),100000000000000000000,100];
         sale = await InteractiveCrowdsaleTestContract.new(accounts[5],
                                                           purchaseData,
+                                                          20,
                                                           1000000000000000000, // minimum in terms of wei
                                                           endWithdrawlTime,
                                                           endTime,
@@ -87,9 +88,10 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
 
         var purchaseData =[startTime,141,100,
                            startTime + duration.weeks(1),200,100];
-                           
+
         sale = await InteractiveCrowdsaleTestContract.new(accounts[5],
                                                          purchaseData,
+                                                         20,
                                                          1000000000000000000, // minimum in terms of wei
                                                          endWithdrawlTime,
                                                          endTime,

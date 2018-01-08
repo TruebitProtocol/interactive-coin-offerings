@@ -19,6 +19,7 @@ contract InteractiveCrowdsaleTestContract {
   function InteractiveCrowdsaleTestContract(
     address owner,
     uint256[] saleData,
+    uint256 priceBonusPercent,
     uint256 minimumRaise,
     uint256 endWithdrawalTime,
     uint256 endTime,
@@ -30,6 +31,7 @@ contract InteractiveCrowdsaleTestContract {
   {
   	sale.init(owner,
               saleData,
+              priceBonusPercent,
               minimumRaise,
               endWithdrawalTime,
               endTime,
@@ -114,6 +116,10 @@ contract InteractiveCrowdsaleTestContract {
 
   function getPersonalCap(address _bidder) public view returns (uint256) {
     return sale.getPersonalCap(_bidder);
+  }
+
+  function getPrice(address _bidder) public view returns (uint256) {
+    return sale.pricePurchasedAt[_bidder];
   }
 
   function getSaleData(uint256 timestamp) public view returns (uint256[3]) {
