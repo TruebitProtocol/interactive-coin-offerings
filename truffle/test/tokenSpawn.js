@@ -5,11 +5,11 @@ const { should } = require('./helpers/utils')
 const CrowdsaleToken = artifacts.require("CrowdsaleToken");
 const InteractiveCrowdsaleTestContract = artifacts.require("InteractiveCrowdsaleTestContract");
 
-contract("Withdrawing ETH", (accounts) => {
-  let sale, startTime, endWithdrawlTime, endTime, afterEndTime;
+contract("Launching the token", (accounts) => {
+  let sale, startTime, endWithdrawlTime, endTime, afterEndTime, token;
 
   before(async function () {
-    startTime = latestTime() + duration.weeks(7) + duration.hours(4);
+    startTime = latestTime() + duration.years(3);
     endWithdrawlTime = startTime + duration.weeks(1)
     endTime = startTime + duration.weeks(4)
     afterEndTime = endTime + duration.seconds(1)
@@ -34,12 +34,47 @@ contract("Withdrawing ETH", (accounts) => {
     await increaseTimeTo(startTime);
     await sale.submitBid(200000000000000000000, 0, {from: accounts[1], value: contrib});
 
-    for(var i = 2; i < 12; i++){
+    for(var i = 2; i < 11; i++){
       await sale.submitBid(200000000000000000000, 200000000000000000000, {from: accounts[i], value: contrib})
     }
 
-    const committed = sale.getTotalValuation();
-    console.log(committed.toNumber())
+    const committed = await sale.getTotalValuation();
+    assert.equal(committed.toNumber(), 100000000000000000000, 'Sale value should be 100 ETH')
+  })
+
+  it("Should not have a token yet", async () => {
+    const tokenAddress = await sale.getTokenAddress();
+    assert.equal(tokenAddress, '0x0000000000000000000000000000000000000000', 'Token should have address 0 before finalizing the sale.')
+  })
+
+  it("Launches the new token when finalized", async () => {
+    await increaseTimeTo(afterEndTime);
+    await sale.finalizeSale();
+
+    const tokenAddress = await sale.getTokenAddress();
+    token = CrowdsaleToken.at(tokenAddress);
+    const tokenName = await token.name();
+    assert.equal(tokenName, "Jason Token", 'Tokens should be created after the sale is finalized');
+  })
+
+  it("Launches the correct amount of tokens", async () => {
+    // 100 ETH sale value divided by 50% of total tokens sold + bonus tokens
+    const calculatedTokens = '220000000000000000000000';
+
+    const initSupply = await token.initialSupply();
+    assert.equal(initSupply.toNumber(), calculatedTokens, 'The appropriate number of tokens should be created')
+  })
+
+  it("Gives the correct amount of tokens to the owner", async () => {
+    const calcOwnerBalance = '100000000000000000000000';
+    const ownerBalance = await token.balanceOf(accounts[0]);
+    assert.equal(ownerBalance.toNumber(), calcOwnerBalance, 'The owner should be sent the appropriate number of tokens')
+  })
+
+  it("Gives the correct amount of tokens to the contract", async () => {
+    const calcContractBalance = '120000000000000000000000';
+    const contractBalance = await token.balanceOf(sale.address);
+    assert.equal(contractBalance.toNumber(), calcContractBalance, 'The contract should have the appropriate number of tokens');
   })
 
 })

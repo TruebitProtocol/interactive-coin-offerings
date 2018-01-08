@@ -62,6 +62,10 @@ contract InteractiveCrowdsaleTestContract {
     return sale.withdrawLeftoverWei();
   }
 
+  function finalizeSale() public returns (bool) {
+    return sale.finalizeSale();
+  }
+
   function withdrawOwnerEth() public returns (bool) {
   	return sale.withdrawOwnerEth();
   }
@@ -140,5 +144,9 @@ contract InteractiveCrowdsaleTestContract {
 
   function getTotalValuation() public view returns (uint256) {
     return sale.totalValuation;
+  }
+
+  function getTokenAddress() public view returns (address) {
+    return address(sale.base.token);
   }
 }

@@ -13,27 +13,25 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
     let sale, startTime, endWithdrawlTime, endTime, afterEndTime;
 
     context("Intializing the contract", async () => {
-      before(async function () {
-        startTime = latestTime() + duration.weeks(7)
-        endWithdrawlTime = startTime + duration.weeks(100)
-        endTime =  startTime + duration.years(2)
-        afterEndTime = endTime + duration.seconds(1)
+        before(async function () {
+            startTime = latestTime() + duration.weeks(15) + duration.hours(4);
+            endWithdrawlTime = startTime + duration.weeks(100)
+            endTime =  startTime + duration.years(2)
+            afterEndTime = endTime + duration.seconds(1)
 
-        // first milestone is 120 tokens/eth and second is 100 tokens/eth with 18 decimal zeros
-        var purchaseData =[startTime,120000000000000000000,100,
-                           startTime + duration.weeks(1),100000000000000000000,100];
-        sale = await InteractiveCrowdsaleTestContract.new(accounts[5],
-                                                          purchaseData,
-                                                          20,
-                                                          1000000000000000000, // minimum in terms of wei
-                                                          endWithdrawlTime,
-                                                          endTime,
-                                                          50,
-                                                          "Jason Token",
-                                                          "TBT",
-                                                          18,
-                                                          false);
+            var purchaseData =[startTime,1000000000000000000000,0];
 
+            sale = await InteractiveCrowdsaleTestContract.new(accounts[5],
+                                                             purchaseData,
+                                                             20,
+                                                             1000000000000000000, // minimum in terms of wei
+                                                             endWithdrawlTime,
+                                                             endTime,
+                                                             50,
+                                                             "Jason Token",
+                                                             "TBT",
+                                                             18,
+                                                             false);
       })
 
       it('has the correct owner', async () => {
@@ -81,13 +79,12 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
     context("Testing bid submission", async() => {
 
       before(async function () {
-        startTime = latestTime() + duration.weeks(7)
+        startTime = latestTime() + duration.weeks(15) + duration.hours(4)
         endWithdrawlTime = startTime + duration.weeks(100)
         endTime =  startTime + duration.years(2)
         afterEndTime = endTime + duration.seconds(1)
 
-        var purchaseData =[startTime,141,100,
-                           startTime + duration.weeks(1),200,100];
+        var purchaseData =[startTime,1000000000000000000000,0];
 
         sale = await InteractiveCrowdsaleTestContract.new(accounts[5],
                                                          purchaseData,

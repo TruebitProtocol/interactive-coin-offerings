@@ -244,7 +244,7 @@ contract("Moving pointer", (accounts) => {
   let sale, startTime, endWithdrawlTime, endTime, afterEndTime, simulation;
 
   before(async function () {
-    startTime = latestTime() + duration.weeks(7) + duration.hours(4);
+    startTime = latestTime() + duration.weeks(30) + duration.hours(4);
     endWithdrawlTime = startTime + duration.weeks(100)
     endTime = startTime + duration.years(2)
     afterEndTime = endTime + duration.seconds(1)
@@ -280,7 +280,7 @@ contract("Moving pointer", (accounts) => {
   it("Has correct ETH refunds during the sale", async () => {
     var ethBalance
 
-    for(var i = 0; i < accounts.length; i++){
+    for(var i = 1; i < accounts.length; i++){
       ethBalance = await sale.getLeftoverWei(accounts[i])
       //console.log(accounts[i]+": "+ethBalance)
       if (simulation.addressWithdrew[i] == false) {
