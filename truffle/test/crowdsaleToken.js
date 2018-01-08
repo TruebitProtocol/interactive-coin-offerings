@@ -1,4 +1,4 @@
-const { should } = require('./helpers/utils')
+/*const { should } = require('./helpers/utils')
 const CrowdsaleToken = artifacts.require("CrowdsaleToken");
 
 contract('CrowdsaleToken', function () {
@@ -28,3 +28,4 @@ contract('CrowdsaleToken', function () {
       totalSupply.should.be.bignumber.equal(2e+25)
     })
 });
+*/
