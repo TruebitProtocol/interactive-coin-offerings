@@ -165,7 +165,9 @@ async function simulate(accounts, sale){
     value = getRandomValueInEther(1000000000000000000,10000000000000000000);
     cap = getRandomValueInEther(10000000000000000000, 200000000000000000000);
     var numDigits = getNumDigits(cap);
-    cap = Math.floor(cap/Math.pow(10,(numDigits-3)));
+    console.log(cap)
+    console.log(numDigits)
+    cap = cap - Math.floor(cap%Math.pow(10,(numDigits-3)));
     var spot = findPredictedValue(temp, cap);
     personalCaps[i] = cap;
     initialContribution[i] = value;
@@ -274,8 +276,8 @@ contract("Moving pointer", (accounts) => {
 
     await increaseTimeTo(startTime);
     simulation = await simulate(accounts, sale);
-    // console.log("fetched Pointers: ", simulation.fetchedValuationPointer);
-    // console.log("calculated pointers", simulation.calculatedValuationPointer);
+    console.log("fetched Pointers: ", simulation.fetchedValuationPointer);
+    console.log("calculated pointers", simulation.calculatedValuationPointer);
     for(var i = 0; i < simulation.fetchedValuationPointer.length; i++){
       assert.equal(simulation.fetchedValuationPointer[i], simulation.calculatedValuationPointer[i], "Results from fetched value differ from calculated value");
     }
@@ -324,7 +326,7 @@ contract("Moving pointer", (accounts) => {
     assert.equal(tokenName, "Jason Token", 'Tokens should be created after the sale is finalized');
 
     const initSupply = await token.initialSupply();
-    console.log(initSupply.valueOf());
+    //console.log(initSupply.valueOf());
     //assert.equal(initSupply.toNumber(), calculatedTokens, 'The appropriate number of tokens should be created')
 
   })
@@ -333,11 +335,11 @@ contract("Moving pointer", (accounts) => {
   it("Denys token withdrawals for bidders below the valuation and allows correct ETH withdrawals", async () => {
     let error = false;
 
-    let totalValuation = await sale.getTotalValuation();
-    let minimumRaise = await sale.getMinimumRaise();
+    // let totalValuation = await sale.getTotalValuation();
+    // let minimumRaise = await sale.getMinimumRaise();
 
-    console.log(totalValuation.valueOf());
-    console.log(minimumRaise.valueOf());
+    // console.log(totalValuation.valueOf());
+    // console.log(minimumRaise.valueOf());
 
     for(var i = 1; i < accounts.length; i++){
       console.log("cap: "+simulation.personalCaps[i])
@@ -360,7 +362,7 @@ contract("Moving pointer", (accounts) => {
         //assert.equal(denyToken.logs[0].args.Msg, "Sender has no tokens to withdraw!", "Token withdraw should fail if bidder's cap is below the total valuation!");
         //assert.isAbove(initialContribution.valueOf(),newBalance.valueOf(),"the new ETH hasContributed should be less than initial because of ETH refund!");
         assert.equal(newBalance.valueOf(), 0, "hasContributed should be zero for each address that is trying to withdraw!");
-        assert.equal(denyToken.logs[0].args.Amount, totalAfterWithdraw.valueOf(), "amount of wei withdrawn should be the sum of of the initial withdrawal refund plus finalized refund!");
+        assert.equal(denyToken.logs[0].args.Amount.valueOf(), totalAfterWithdraw.valueOf(), "amount of wei withdrawn should be the sum of of the initial withdrawal refund plus finalized refund!");
         assert.equal(leftoverWei.valueOf(), 0, "leftoverWei should be 0 after withdrawal!");
       
       }
@@ -375,6 +377,9 @@ contract("Moving pointer", (accounts) => {
         let price = await sale.getPrice(accounts[i]);
         let hasContributed = await sale.getContribution(accounts[i]);
         assert.isAbove(hasContributed.valueOf(),0, "hasContributed should be greater than zero before token withdrawal");
+
+        console.log("price: "+price.valueOf());
+        console.log("contribte: "+hasContributed.valueOf());
 
         let tokenPurchase = price.toNumber() * hasContributed.toNumber();
 
