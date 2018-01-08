@@ -88,6 +88,7 @@ function calculateValuationPointer (valueCommitted, valuationsList, valuationSum
         committedAtThisValue = proposedCommit
       } else {
         proposedValuation = valuationsList[i]
+        committedAtThisValue = proposedCommit + sumAtValuation
       }
       pointer = valuationsList[i]
 
