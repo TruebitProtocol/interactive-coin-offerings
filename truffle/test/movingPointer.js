@@ -165,8 +165,6 @@ async function simulate(accounts, sale){
     value = getRandomValueInEther(1000000000000000000,10000000000000000000);
     cap = getRandomValueInEther(10000000000000000000, 200000000000000000000);
     var numDigits = getNumDigits(cap);
-    console.log(cap)
-    console.log(numDigits)
     cap = cap - Math.floor(cap%Math.pow(10,(numDigits-3)));
     var spot = findPredictedValue(temp, cap);
     personalCaps[i] = cap;
@@ -185,7 +183,7 @@ async function simulate(accounts, sale){
 
       try{
           console.log('cap '+cap);
-          console.log('value '+value);
+          console.log('value '+value+"\n");
           //console.log('spot '+spot);
           bid = await sale.submitBid(cap, spot, {from: accounts[i], value: value});
           valuationsList = insertInOrder(valuationsList, cap);
@@ -355,9 +353,9 @@ contract("Moving pointer", (accounts) => {
 
         let leftoverWei = await sale.getLeftoverWei(accounts[i]);
 
-        // console.log("contribution: "+initialContribution.valueOf());
-        // console.log("leftover: "+initialLeftover.valueOf());
-        // console.log("totalAfterWithdraw: "+totalAfterWithdraw.valueOf());
+        console.log("contribution: "+initialContribution.valueOf());
+        console.log("leftover: "+initialLeftover.valueOf());
+        console.log("totalAfterWithdraw: "+totalAfterWithdraw.valueOf());
 
         //assert.equal(denyToken.logs[0].args.Msg, "Sender has no tokens to withdraw!", "Token withdraw should fail if bidder's cap is below the total valuation!");
         //assert.isAbove(initialContribution.valueOf(),newBalance.valueOf(),"the new ETH hasContributed should be less than initial because of ETH refund!");

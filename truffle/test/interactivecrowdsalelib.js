@@ -24,7 +24,7 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
             sale = await InteractiveCrowdsaleTestContract.new(accounts[5],
                                                              purchaseData,
                                                              20,
-                                                             2000, // minimum in terms of wei
+                                                             1000000000000000000, // minimum in terms of wei
                                                              endWithdrawlTime,
                                                              endTime,
                                                              50,
@@ -41,7 +41,7 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
 
       it('has the correct minimum raise', async () => {
         const raise = await sale.getMinimumRaise()
-        raise.should.be.bignumber.equal(2000)
+        raise.should.be.bignumber.equal(1000000000000000000)
       })
 
       it('has the correct endWithdrawalTime', async () => {
