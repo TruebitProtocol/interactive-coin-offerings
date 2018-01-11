@@ -117,6 +117,8 @@ To accomplish this, the library utilizes a pointer throughout the sale that indi
 
 At the beginning of the sale, the pointer is set at 0, indicating that the valuation of the sale is 0 and there are no bids that have been submitted or “discarded” from the sale.
 
+![alt text](./photos/IICOinitial.png)
+
 Bid Process:
 (This process is taken from the submitBid function in InteractiveCrowdsaleLib.sol)
 
@@ -233,7 +235,7 @@ No return
 #### numDigits(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage, uint256)   
 *(InteractiveCrowdsaleLib.sol, line 67)*
 
-Gets the number of digits in a number. Used to enforce spaced buckets for personal valuation caps.
+Gets the number of digits in _number. Used to enforce spaced buckets for personal valuation caps.
 
 ##### Arguments
 **InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage** self  
@@ -259,7 +261,7 @@ calculates the number of tokens purchased based on the amount of wei spent and t
 #### getCurrentBonus(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage)   
 *(InteractiveCrowdsaleLib.sol, line 67)*
 
-Called when an address wants to submit bid to the sale. calculates the bonus percentage for the token price this purchase gets.
+Called when an address wants to submit bid to the sale. This caluculates the bonus percentage the address receives when submitting bids.  The bonus gradually decreases from self.priceBonusPercent to zero from the beginning to the end of the first stage. After the withdrawal lock, there is no bonus.
 
 ##### Arguments
 **InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage** self  
@@ -270,7 +272,7 @@ Called when an address wants to submit bid to the sale. calculates the bonus per
 #### submitBid(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage, uint256, uint256, uint256)   
 *(InteractiveCrowdsaleLib.sol, line 67)*
 
-Allows participants to submit ETH bids with a personal cap and linked list spot prediction.  This function registers the bid in the sale and calculates the valuation pointer
+Allows participants to submit ETH bids with a personal cap and linked list spot prediction.  First, the function checks to see if the bid is valid.  Then it inserts the personal valuation cap into the linked list, if necessary.  It then updates the participants bid records. Lastly, it performs the operations to assign the new valuation pointer to the correct bucket.  It then logs the current token price and emits an event.
 
 ##### Arguments
 **InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage** self   
@@ -284,7 +286,7 @@ Allows participants to submit ETH bids with a personal cap and linked list spot 
 #### withdrawBid(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage)   
 *(InteractiveCrowdsaleLib.sol, line 67)*
 
-Withdraws the participant's bid from the sale. The participant receives a partial refund and the valuation pointer is updated to account for this.
+Withdraws the participant's bid from the sale. If it is after the withdrawal lock and the participant has a minimal personal cap, they get a full refund.  If it is before the withdrawal lock, they receive a partial refund of the ETH.  The withheld ETH still goes towards their token purchase, but is committed to the end of the sale.  Then, if it is before the withdrawal lock, the valuation pointer is updated to reflect the new sale valuation.
 
 ##### Arguments
 **InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage** self  
@@ -295,7 +297,7 @@ Withdraws the participant's bid from the sale. The participant receives a partia
 #### finalizeSale(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage)   
 *(InteractiveCrowdsaleLib.sol, line 67)*
 
-This should be called once the sale is over to commit all bids into the owner's bucket. Also calls the launchToken function
+This should be called once the sale is over to launch the token and record the total ETH raised into the owners withdrawal bucket.
 
 ##### Arguments
 **InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage** self  
@@ -306,7 +308,7 @@ This should be called once the sale is over to commit all bids into the owner's 
 #### launchToken(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage)   
 *(InteractiveCrowdsaleLib.sol, line 67)*
 
-Mints the token being sold by taking the percentage of the token supply being sold in this sale along with the valuation, derives all necessary values and then transfers owner tokens to the owner.
+Mints the token being sold by taking the percentage of the token supply being sold in this sale along with the valuation, derives all necessary values, launches the token contract, and then transfers owner tokens to the owner.  If the sale did not reach the minimum valuation, all the tokens are transferred to the owner and all participant's ETH is available for refund.
 
 ##### Arguments
 **InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage** self  
@@ -328,7 +330,7 @@ returns a boolean indicating if the sale is canceled. This can either be if the 
 #### retreiveFinalResult(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage)   
 *(InteractiveCrowdsaleLib.sol, line 67)*
 
-If the address' personal cap is below the pointer or the sale is cancelled, refund them all their ETH. if their personal valuation cap is above the pointer, calculate tokens purchased and withdraw tokens and ETH
+Called by participants after the sale ends.  Finalizes a participant's participation in the sale.  If the address' personal cap is below the pointer or the sale is cancelled, refund them all their ETH. If their personal valuation cap is equal to the total valuation, they get a partial ETH refund and a partial token purchase.  If their personal valuation cap is greater than the total valuation, the function calculates tokens purchased and sends them their tokens.  This is the last function participants have to call.
 
 ##### Arguments
 **InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage** self  
