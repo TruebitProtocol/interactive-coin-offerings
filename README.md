@@ -13,13 +13,6 @@ A crowdsale library to use for interactive crowdsale contract deployment.
 **Ropsten Test Network**:    
 **Rinkeby Test Network**:    
 
-## License and Warranty   
-
-Be advised that while we strive to provide professional grade, tested code we cannot guarantee its fitness for your application. This is released under [The MIT License (MIT)](https://github.com/Modular-Network/ethereum-libraries/blob/master/LICENSE "MIT License") and as such we will not be held liable for lost funds, etc. Please use your best judgment and note the following:   
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-
 ## How to install
 
 ### Truffle Installation
@@ -30,6 +23,47 @@ First install truffle via npm using `npm install -g truffle` .
 
 Please [visit Truffle's installation guide](http://truffleframework.com/docs/getting_started/installation "Truffle installation guide") for further information and requirements.
 
+## Development
+
+**Dependencies**
+
+* `node@8.5.x`
+* `truffle@^4.0.1`
+* `ethereumjs-testrpc@^6.0.x`
+
+## Setting Up
+
+* Clone this repository.
+
+* Install all [system dependencies](#development).
+
+  * `cd truffle && npm install`
+
+* Compile contract code
+
+  * `node_modules/.bin/truffle compile`
+
+## Running Tests
+
+* `bash run_test.sh`
+
+## Code Contributions
+
+If you see an issue please don't hesitate to dive in. We welcome help in any form and are more than willing to offer our assistance to developers who want to contribute to documentation, code fixes, or even new libraries or functionality! We ask that you follow a few guidelines when making changes to the repo:
+
+1. Create an issue for changes being made.
+2. Create a branch named for the issue ie 7-[label].
+3. Use keyword `Closes #[issue-number]` when opening a PR.
+
+
+**DISCLAIMER:** As always, please ensure you review this code thoroughly for your team's use. We strive to make our code as solid, clean, and well documented as possible but will not accept liability for unforeseen circumstances in which value is lost or stolen. This includes but not limited to any inability to meet signature requirements to move funds, loss of private keys, transactions you deem unauthorized from an owner's account, etc. The library code has been thoroughly tested by our team and believe it to be suitable enough to be posted in our open source repository, however, you are still responsible for its implementation and security in your smart contract. Please use your best judgment. Please let us know immediately if you have discovered any issues or vulnerabilities with this library.
+
+
+## License and Warranty
+
+Be advised that while we strive to provide professional grade, tested code we cannot guarantee its fitness for your application. This is released under [The MIT License (MIT)](https://github.com/Modular-Network/ethereum-libraries/blob/master/LICENSE "MIT License") and as such we will not be held liable for lost funds, etc. Please use your best judgment and note the following:
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ### Basic Usage
 
@@ -46,8 +80,6 @@ Since the total sale valuation can move up and down in the first stage due to de
 The transition between the first and second stage is termed the “withdrawal lock.” In the second stage, submissions are still allowed, but all active bids are committed for the duration of the sale. Withdrawing ETH refunds are only allowed if the participant has a minimal bid, meaning their personal cap is less than the total sale valuation — in other words, excluded from the sale. These withdrawals receive complete refunds because their contributions have no effect on the sale. After the withdrawal lock, the total sale valuation will monotonically increase, meaning it can only stay the same or increase.
 
 ![alt text](./photos/IICOTable.png)
-
-**DISCLAIMER:** As always, please ensure you review this code thoroughly for your team's use. We strive to make our code as solid, clean, and well documented as possible but will not accept liability for unforeseen circumstances in which value is lost or stolen. This includes but not limited to any inability to meet signature requirements to move funds, loss of private keys, transactions you deem unauthorized from an owner's account, etc. The library code has been thoroughly tested by our team and believe it to be suitable enough to be posted in our open source repository, however, you are still responsible for its implementation and security in your smart contract. Please use your best judgment. Please [let us know immediately](https://majoolr.io \"Majoolr website\") if you have discovered any issues or vulnerabilities with this library.
 
 
 ## Implementation Details
@@ -183,44 +215,6 @@ Most of the algorithms for tracking bids require changing only a few values and 
 Addresses can only submit one bid each.
 
 The bidders submit a prediction for where to start searching in the list. We chose this with the intent that the owner will publish the valuations at certain placements in the linked list, like 1/4 of the way through, 1/2 way through, 3/4 of the way through, etc depending on the size of the list. Bidders chose the search prediction that is closest to their personal Valuation to save time and gas in finding their spot in the list.
-
-## Development
-
-**Dependencies**
-
-* `node@8.5.x`
-* `truffle@^4.0.1`
-* `ethereumjs-testrpc@^6.0.x`
-
-## Setting Up
-
-* Clone this repository.
-
-* Install all [system dependencies](#development).
-
-  * `cd truffle && npm install`
-
-* Compile contract code
-
-  * `node_modules/.bin/truffle compile`
-
-## Running Tests
-
-* `bash run_test.sh`
-
-## Code Contributions
-
-If you see an issue please don't hesitate to dive in. We welcome help in any form and are more than willing to offer our assistance to developers who want to contribute to documentation, code fixes, or even new libraries or functionality! We ask that you follow a few guidelines when making changes to the repo:
-
-1. Create an issue for changes being made.
-2. Create a branch named for the issue ie 7-[label].
-3. Use keyword `Closes #[issue-number]` when opening a PR.
-
-## License and Warranty
-
-Be advised that while we strive to provide professional grade, tested code we cannot guarantee its fitness for your application. This is released under [The MIT License (MIT)](https://github.com/Modular-Network/ethereum-libraries/blob/master/LICENSE "MIT License") and as such we will not be held liable for lost funds, etc. Please use your best judgment and note the following:
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 ## Functions
