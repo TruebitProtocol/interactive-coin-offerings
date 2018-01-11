@@ -1,6 +1,7 @@
 import {advanceBlock} from './helpers/advanceToBlock'
 import {increaseTimeTo, duration} from './helpers/increaseTime'
 import latestTime from './helpers/latestTime'
+import BN from 'bn.js'
 const { should } = require('./helpers/utils')
 const CrowdsaleToken = artifacts.require("CrowdsaleToken");
 const InteractiveCrowdsaleTestContract = artifacts.require("InteractiveCrowdsaleTestContract");
@@ -342,11 +343,13 @@ contract("Moving pointer", (accounts) => {
     for(var i = 1; i < accounts.length; i++){
       console.log("cap: "+simulation.personalCaps[i])
       if ((simulation.personalCaps[i] < simulation.totalValuation) && (i != 5)) {
-
+        console.log('account number '+i)
         let initialContribution = await sale.getContribution(accounts[i]);
+        initialContribution = new BN(initialContribution.valueOf(), 10)
         let initialLeftover = await sale.getLeftoverWei(accounts[i]);
-        let totalAfterWithdraw = initialContribution.toNumber() + initialLeftover.toNumber();
-        
+        initialLeftover = new BN(initialLeftover.valueOf(), 10)
+        let totalAfterWithdraw = initialContribution.add(initialLeftover);
+
         let denyToken = await sale.retreiveFinalResult({from:accounts[i]});
 
         let newBalance = await sale.getContribution(accounts[i]);
@@ -362,7 +365,7 @@ contract("Moving pointer", (accounts) => {
         assert.equal(newBalance.valueOf(), 0, "hasContributed should be zero for each address that is trying to withdraw!");
         assert.equal(denyToken.logs[0].args.Amount.valueOf(), totalAfterWithdraw.valueOf(), "amount of wei withdrawn should be the sum of of the initial withdrawal refund plus finalized refund!");
         assert.equal(leftoverWei.valueOf(), 0, "leftoverWei should be 0 after withdrawal!");
-      
+
       }
     }
   })
@@ -373,13 +376,35 @@ contract("Moving pointer", (accounts) => {
       console.log("cap: "+simulation.personalCaps[i])
       if ((simulation.personalCaps[i] > simulation.totalValuation) && (i != 5)) {
         let price = await sale.getPrice(accounts[i]);
+        console.log('price before BN: '+price.valueOf())
+        console.log('price to string: '+price.toString())
+        console.log(price)
+        //price = new BN(price.toString(), 10)
         let hasContributed = await sale.getContribution(accounts[i]);
+        hasContributed = new BN(hasContributed.valueOf(), 10)
+        console.log('account number: '+i)
         assert.isAbove(hasContributed.valueOf(),0, "hasContributed should be greater than zero before token withdrawal");
 
-        console.log("price: "+price.valueOf());
-        console.log("contribte: "+hasContributed.valueOf());
+        console.log("price: "+price.toString());
+        console.log("contribute: "+hasContributed.toString(10));
 
-        let tokenPurchase = price.toNumber() * hasContributed.toNumber();
+        let tokenPurchase = price.mul(hasContributed)
+        let divisor = new BN("1000000000000000000", 10)
+        //tokenPurchase = new BN(tokenPurchase.toString())
+        //console.log(tokenPurchase.c)
+
+        //console.log('tp: '+tokenPurchase)
+        tokenPurchase = tokenPurchase.div(divisor).toString()
+        if(tokenPurchase.split('e').length == 1){
+          tokenPurchase = tokenPurchase.split('.')[0]
+        } else if(tokenPurchase.split('e')[0].length > 23){
+          let firstPart = tokenPurchase.substring(0,23)
+          while(firstPart.charAt(firstPart.length-1) == '0'){
+            firstPart.slice(0,-1)
+          }
+          tokenPurchase = firstPart+ 'e' +tokenPurchase.split('e')[1]
+        }
+        console.log('tp: '+tokenPurchase)
 
         let tokenWithdraw = await sale.retreiveFinalResult({from:accounts[i]});
 
@@ -390,7 +415,7 @@ contract("Moving pointer", (accounts) => {
         let leftoverWei = await sale.getLeftoverWei(accounts[i]);
         hasContributed = await sale.getContribution(accounts[i]);
 
-        assert.equal(tokenPurchase,balance.valueOf(),"Balance of the user should equal the calculated value!");
+        assert.equal(tokenPurchase.valueOf(),balance.valueOf(),"Balance of the user should equal the calculated value!");
         assert.equal(leftoverWei.valueOf(), 0, "leftoverWei should be 0 after withdrawal!");
         assert.equal(hasContributed.valueOf(),0, "hasContributed should be zero after token withdrawal");
       }
