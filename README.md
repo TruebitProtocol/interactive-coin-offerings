@@ -15,14 +15,16 @@ A crowdsale library to use for interactive crowdsale contract deployment.
 
 ## License and Warranty   
 
-Be advised that while we strive to provide professional grade, tested code we cannot guarantee its fitness for your application. This is released under [The MIT License (MIT)](https://github.com/Majoolr/ethereum-libraries/blob/master/LICENSE "MIT License") and as such we will not be held liable for lost funds, etc. Please use your best judgment and note the following:   
+Be advised that while we strive to provide professional grade, tested code we cannot guarantee its fitness for your application. This is released under [The MIT License (MIT)](https://github.com/Modular-Network/ethereum-libraries/blob/master/LICENSE "MIT License") and as such we will not be held liable for lost funds, etc. Please use your best judgment and note the following:   
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
 ## How to install
 
 ### Truffle Installation
 
-**version 3.4.9**   
+**version 4.0.1**   
 
 First install truffle via npm using `npm install -g truffle` .   
 
@@ -42,6 +44,8 @@ Personal valuation cap: An indication by each participant that they are willing 
 There are two stages to the sale. In the first stage, participants are allowed to submit and withdraw bids at will. Early bidders receive bonus tokens as part of their purchase. This bonus decreases linearly until the end of the first stage. Participants can manually withdraw their submitted bid and receive a linearly decreasing percentage of their ETH back. The ETH that is withheld from this refund still goes towards purchasing tokens for this participant, but forfeits a percentage of the early contribution bonus on these remaining, perminently committed tokens. See section 5.3 of the technical paper for an explanation of why these two penalties are necessary. The ETH that was withheld still goes towards the crowdsale in the form of a token purchase — this penalized ETH is no longer able to be withdrawn. In this stage, the total sale valuation will fluctuate as bids are submitted and withdrawn.
 Since the total sale valuation can move up and down in the first stage due to deposits and withdrawals, every bid is still ‘active’ even if a personal valuation cap is exceeded.
 The transition between the first and second stage is termed the “withdrawal lock.” In the second stage, submissions are still allowed, but all active bids are committed for the duration of the sale. Withdrawing ETH refunds are only allowed if the participant has a minimal bid, meaning their personal cap is less than the total sale valuation — in other words, excluded from the sale. These withdrawals receive complete refunds because their contributions have no effect on the sale. After the withdrawal lock, the total sale valuation will monotonically increase, meaning it can only stay the same or increase.
+
+![alt text](./photos/IICOTable.png)
 
 **DISCLAIMER:** As always, please ensure you review this code thoroughly for your team's use. We strive to make our code as solid, clean, and well documented as possible but will not accept liability for unforeseen circumstances in which value is lost or stolen. This includes but not limited to any inability to meet signature requirements to move funds, loss of private keys, transactions you deem unauthorized from an owner's account, etc. The library code has been thoroughly tested by our team and believe it to be suitable enough to be posted in our open source repository, however, you are still responsible for its implementation and security in your smart contract. Please use your best judgment. Please [let us know immediately](https://majoolr.io \"Majoolr website\") if you have discovered any issues or vulnerabilities with this library.
 
@@ -133,18 +137,28 @@ If you reference the technical paper, you’ll see in Section 4, step 3, part 3 
 Valuation Pointer Mechanics Walkthrough
 Here is a quick walkthrough with some diagrams to show the correct pointer movement. We’ll start with the first bid in the sale, Josh sending 9 ETH with a personal valuation cap of 186 ETH. Here is the state after the first bid.
 
+![alt text](./photos/IICOfirst.png)
+
 As you can see, Josh has contributed 9 ETH, so the total sale valuation has increased to 9. His personal  valuation cap was added to the sorted list of caps, but since the total sale valuation is still less than his cap, the pointer is still pointing at zero, showing that all bids still remain in the sale. 
 
 You might be confused that the pointer isn’t equal to the current valuation. The reason for this is that the pointer needs to always point at one of the personal valuation caps, indicating which cap is the cutoff to remain in the sale. This is slightly different than what is specified in section 4 of the technical paper, but necessary for proper functionality of the pointer mechanism and ensuring monotonically increasing sale valuation.
 
 A similar state happens when the second bid is submitted with a high personal  valuation cap:
 
+![alt text](./photos/IICOsecond.png)
+
 
 Going smoothly so far! Now lets see what happens when a bid is submitted with a personal valuation cap that is less than the total sale valuation:
+
+![alt text](./photos/IICOthird.png)
+
+![alt text](./photos/IICOfourth.png)
 
 The bid has a personal valuation cap below the total sale valuation, so it doesn’t affect the sale at allPointer is fixed when another bid comes inAs you can see, Robbie’s bid with a personal valuation cap less than the total sale valuation is still recorded in the list and storage, but does not affect the total sale valuation or pointer at all. When another bid comes in, the pointer is moved to 12 to show that personal  valuation caps of 12 and lower are not involved in the sale.
 
 Now lets see what happens when a bidders cap is exceeded:
+
+![alt text](./photos/IICOsixth.png)
 
 As you can see from the next two bids, the total sale valuation would increase to more than Gus’ cap of 38, but removing his bid would decrease the total sale valuation to below 38. This creates an issue with deciding whether or not he should remain in the sale. The sale accounts for this by moving the pointer to 38, his cap, and setting the total sale valuation to the same number. This indicates that he will get a partial purchase of his tokens when he withdraws his tokens at the end of the sale.
 
@@ -155,6 +169,8 @@ At some point, some of the participants might want to manually withdraw their bi
 Let’s look at how it would affect our example sale.
 
 In this example, JG wants to withdraw his 5 ETH contribution from the sale. The figure shows the state of the sale after the withdrawal.
+
+![alt text](./photos/IICOWithdrawal.png)
 
 The penalty increases linearly throughout the first stage of the sale. For simplicity’s sake, we are assuming that the penalty at this point is 40%. JG gets 3 ETH back and the remaining 2 is still committed to the sale. This decreases the total sale valuation to 35, and the pointer stays at 38. If there was a bid with a personal valuation cap of 35, the pointer would be pointing at that, but since there isn’t, it stays at 38.
 
