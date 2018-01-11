@@ -342,8 +342,6 @@ library InteractiveCrowdsaleLib {
 
       refundWei = self.base.hasContributed[msg.sender];
 
-      self.base.hasContributed[msg.sender] = 0;
-
     } else {
       require(!self.hasManuallyWithdrawn[msg.sender]);
       /***********************************************************************
