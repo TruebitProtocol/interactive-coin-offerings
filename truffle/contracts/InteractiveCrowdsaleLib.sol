@@ -2,10 +2,10 @@ pragma solidity ^0.4.18;
 
 /**
  * @title InteractiveCrowdsaleLib
- * @author Majoolr.io
+ * @author Modular, Inc
  *
  * version 1.0.0
- * Copyright (c) 2017 Modular, LLC
+ * Copyright (c) 2017 Modular, Inc
  * The MIT License (MIT)
  *
  * The InteractiveCrowdsale Library provides functionality to create a crowdsale
@@ -63,11 +63,17 @@ library InteractiveCrowdsaleLib {
 
     // amount of value committed at this valuation, cannot rely on owner balance
     // due to fluctations in commitment calculations needed after owner withdraws
-    // in other words, the total amount of ETH committed, including total bids that will eventually get partial purchases
+    // in other words, the total amount of ETH committed, including total bids
+    // that will eventually get partial purchases
     uint256 valueCommitted;
 
-    // the bucket that sits either at or just below current total valuation. determines where the cutoff point is for bids in the sale
+    // the bucket that sits either at or just below current total valuation.
+    // determines where the cutoff point is for bids in the sale
     uint256 currentBucket;
+
+    // the fraction of each minimal valuation bidder's ether refund, 'q' is from the paper
+    // and is calculated when finalizing the sale
+    uint256 q;
 
     // minimim amount that the sale needs to make to be successfull
     uint256 minimumRaise;
@@ -75,12 +81,15 @@ library InteractiveCrowdsaleLib {
     // percentage of total tokens being sold in this sale
     uint8 percentBeingSold;
 
-    // the bonus amount for early bidders.  This is a percentage of the base token price that gets added on the the base token price
-    // used in getCurrentBonus()
+    // the bonus amount for early bidders.  This is a percentage of the base token
+    // price that gets added on the the base token price used in getCurrentBonus()
     uint256 priceBonusPercent;
 
     // Indicates that the owner has finalized the sale and withdrawn Ether
-    bool ownerHasWithdrawnETH;
+    bool isFinalized;
+
+    // Set to true if the sale is canceled
+    bool isCanceled;
 
     // shows the price that the address purchased tokens at
     mapping (address => uint256) pricePurchasedAt;
@@ -113,7 +122,8 @@ library InteractiveCrowdsaleLib {
   // Indicates when the price of the token changes
   event LogTokenPriceChange(uint256 amount, string Msg);
 
-  // Logs the current bucket that the valuation points to, the total valuation of the sale, and the amount of ETH committed, including total bids that will eventually get partial purchases
+  // Logs the current bucket that the valuation points to, the total valuation of
+  // the sale, and the amount of ETH committed, including total bids that will eventually get partial purchases
   event BucketAndValuationAndCommitted(uint256 bucket, uint256 valuation, uint256 committed);
 
   /// @dev Called by a crowdsale contract upon creation.
@@ -121,7 +131,7 @@ library InteractiveCrowdsaleLib {
   /// @param _owner Address of crowdsale owner
   /// @param _saleData Array of 3 item arrays such that, in each 3 element
   /// array index-0 is a timestamp, index-1 is price in tokens/ETH
-  /// index-2 is address purchase valuation at that time, 0 if no address valuation
+  /// index-2 is address purchase cap at that time, 0 if no address cap
   /// @param _priceBonusPercent the bonus amount for early bidders
   /// @param _minimumRaise minimim amount that the sale needs to make to be successfull
   /// @param _endWithdrawalTime timestamp that indicates that manual withdrawals are no longer allowed
@@ -208,18 +218,17 @@ library InteractiveCrowdsaleLib {
     remainder = weiTokens % 1000000000000000000;
     remainder = remainder / _price;
 
-    // make sure there are enough tokens available to satisfy the bid
-    assert(numTokens <= self.base.token.balanceOf(this));
-
     return (numTokens,remainder);
   }
 
-  /// @dev Called when an address wants to submit bid to the sale
+  /// @dev Called when an address wants to submit a bid to the sale
   /// @param self Stored crowdsale from crowdsale contract
   /// @return currentBonus percentage of the bonus that is applied for the purchase
   function getCurrentBonus(InteractiveCrowdsaleStorage storage self) internal view returns (uint256){
-    uint256 bonusTime = self.endWithdrawalTime - self.base.startTime; // can't underflow becuase endWithdrawalTime > startTime
-    uint256 elapsed = now - self.base.startTime;   // can't underflow becuase now > startTime
+    // can't underflow becuase endWithdrawalTime > startTime
+    uint256 bonusTime = self.endWithdrawalTime - self.base.startTime;
+    // can't underflow because now > startTime
+    uint256 elapsed = now - self.base.startTime;
     uint256 percentElapsed = (elapsed * 100)/bonusTime;
 
     bool err;
@@ -244,7 +253,7 @@ library InteractiveCrowdsaleLib {
     require(msg.sender != self.base.owner);
     require(self.base.validPurchase());
     // bidder can't have already bid
-    require(self.personalCaps[msg.sender] == 0 && self.base.hasContributed[msg.sender] == 0);
+    require((self.personalCaps[msg.sender] == 0) && (self.base.hasContributed[msg.sender] == 0));
 
     uint256 _bonusPercent;
     // token purchase bonus only applies before the withdrawal lock
@@ -258,7 +267,8 @@ library InteractiveCrowdsaleLib {
     }
 
     // personal valuation and minimum should be set to the proper granularity,
-    // only three most significant values can be non-zero. reduces the number of possible valuation buckets in the linked list
+    // only three most significant values can be non-zero. reduces the number of possible
+    // valuation buckets in the linked list
     uint256 digits = numDigits(_personalCap);
     if(digits > 3) {
       require((_personalCap % (10**(digits - 3))) == 0);
@@ -376,13 +386,15 @@ library InteractiveCrowdsaleLib {
       //uint256 multiplierPercent =  (100*(t - s))/t;
       //self.pricePurchasedAt = pa-((pa-pu)/3)
 
-      uint256 multiplierPercent =  (100*(self.endWithdrawalTime - now))/(self.endWithdrawalTime-self.base.startTime);
-      refundWei = (multiplierPercent*self.base.hasContributed[msg.sender])/100;
+      uint256 multiplierPercent = (100 * (self.endWithdrawalTime - now)) /
+                                  (self.endWithdrawalTime - self.base.startTime);
+      refundWei = (multiplierPercent * self.base.hasContributed[msg.sender]) / 100;
 
       self.valuationSums[self.personalCaps[msg.sender]] -= refundWei;
       self.numBidsAtValuation[self.personalCaps[msg.sender]] -= 1;
 
-      self.pricePurchasedAt[msg.sender] = self.pricePurchasedAt[msg.sender]-((self.pricePurchasedAt[msg.sender]-self.base.tokensPerEth)/3);
+      self.pricePurchasedAt[msg.sender] = self.pricePurchasedAt[msg.sender] -
+                                          ((self.pricePurchasedAt[msg.sender] - self.base.tokensPerEth) / 3);
 
       self.hasManuallyWithdrawn[msg.sender] = true;
 
@@ -462,12 +474,26 @@ library InteractiveCrowdsaleLib {
   /// @param self stored crowdsale from crowdsale contract
   function finalizeSale(InteractiveCrowdsaleStorage storage self) public returns (bool) {
     require(now >= self.base.endTime);
-    require(!self.ownerHasWithdrawnETH); // can only be called once
+    require(!self.isFinalized); // can only be called once
+    require(setCanceled(self));
 
+    self.isFinalized = true;
     require(launchToken(self));
+    // may need to be computed due to EVM rounding errors
+    uint256 computedValue;
 
-    self.ownerHasWithdrawnETH = true;
-    self.base.ownerBalance = self.totalValuation;  // sets ETH raised in the sale to be ready for withdrawal
+    if(!self.isCanceled){
+      if(self.totalValuation == self.currentBucket){
+        // calculate the fraction of each minimal valuation bidders ether and tokens to refund
+        self.q = (100*(self.valueCommitted - self.totalValuation)/(self.valuationSums[self.totalValuation])) + 1;
+        computedValue = self.valueCommitted - self.valuationSums[self.totalValuation];
+        computedValue += (self.q * self.valuationSums[self.totalValuation])/100;
+      } else {
+        // no computation necessary
+        computedValue = self.totalValuation;
+      }
+      self.base.ownerBalance = computedValue;  // sets ETH raised in the sale to be ready for withdrawal
+    }
   }
 
   /// @dev Mints the token being sold by taking the percentage of the token supply
@@ -475,13 +501,18 @@ library InteractiveCrowdsaleLib {
   ///      values and then transfers owner tokens to the owner.
   /// @param self Stored crowdsale from crowdsale contract
   function launchToken(InteractiveCrowdsaleStorage storage self) internal returns (bool) {
-
-    uint256 _fullValue = (self.totalValuation*100)/uint256(self.percentBeingSold);  // total valuation of all the tokens not including the bonus
-    uint256 _bonusValue = ((self.totalValuation * (100 + self.priceBonusPercent))/100) - self.totalValuation;  // total valuation of bonus tokens
-    uint256 _supply = (_fullValue * self.base.tokensPerEth)/1000000000000000000;    // total supply of all tokens not including the bonus
-    uint256 _bonusTokens = (_bonusValue * self.base.tokensPerEth)/1000000000000000000;   // total number of bonus tokens
-    uint256 _ownerTokens = _supply - ((_supply * uint256(self.percentBeingSold))/100);   // tokens allocated to the owner of the sale
-    uint256 _totalSupply = _supply + _bonusTokens;     // total supply of tokens not including the bonus tokens
+    // total valuation of all the tokens not including the bonus
+    uint256 _fullValue = (self.totalValuation*100)/uint256(self.percentBeingSold);
+    // total valuation of bonus tokens
+    uint256 _bonusValue = ((self.totalValuation * (100 + self.priceBonusPercent))/100) - self.totalValuation;
+    // total supply of all tokens not including the bonus
+    uint256 _supply = (_fullValue * self.base.tokensPerEth)/1000000000000000000;
+    // total number of bonus tokens
+    uint256 _bonusTokens = (_bonusValue * self.base.tokensPerEth)/1000000000000000000;
+    // tokens allocated to the owner of the sale
+    uint256 _ownerTokens = _supply - ((_supply * uint256(self.percentBeingSold))/100);
+    // total supply of tokens not including the bonus tokens
+    uint256 _totalSupply = _supply + _bonusTokens;
 
     // deploy new token contract with total number of tokens
     self.base.token = new CrowdsaleToken(address(this),
@@ -492,11 +523,11 @@ library InteractiveCrowdsaleLib {
                                          self.tokenInfo.stillMinting);
 
     // if the sale got canceled, then all the tokens go to the owner and bonus tokens are burned
-    if(saleCanceled(self)){
+    if(!self.isCanceled){
+      self.base.token.transfer(self.base.owner, _ownerTokens);
+    } else {
       self.base.token.transfer(self.base.owner, _supply);
       self.base.token.burnToken(_bonusTokens);
-    } else {
-      self.base.token.transfer(self.base.owner, _ownerTokens);
     }
     // the owner of the crowdsale becomes the new owner of the token contract
     self.base.token.changeOwner(self.base.owner);
@@ -505,13 +536,17 @@ library InteractiveCrowdsaleLib {
     return true;
   }
 
-  /// @dev returns a boolean indicating if the sale is canceled. 
-  ///      This can either be if the minimum raise hasn't been met 
+  /// @dev returns a boolean indicating if the sale is canceled.
+  ///      This can either be if the minimum raise hasn't been met
   ///      or if it is 30 days after the sale and the owner hasn't finalized the sale.
   /// @return bool canceled indicating if the sale is canceled or not
-  function saleCanceled(InteractiveCrowdsaleStorage storage self) internal view returns(bool canceled){
-    canceled = (self.totalValuation < self.minimumRaise) ||
-               ((now > (self.base.endTime + 30 days)) && !self.ownerHasWithdrawnETH);
+  function setCanceled(InteractiveCrowdsaleStorage storage self) internal returns(bool){
+    bool canceled = (self.totalValuation < self.minimumRaise) ||
+                    ((now > (self.base.endTime + 30 days)) && !self.isFinalized);
+
+    if(canceled) {self.isCanceled = true;}
+
+    return true;
   }
 
   /// @dev If the address' personal cap is below the pointer, refund them all their ETH.
@@ -521,16 +556,20 @@ library InteractiveCrowdsaleLib {
   function retreiveFinalResult(InteractiveCrowdsaleStorage storage self) public returns (bool) {
     require(now > self.base.endTime);
     require(self.personalCaps[msg.sender] > 0);
-    require(self.ownerHasWithdrawnETH);
 
     uint256 numTokens;
     uint256 remainder;
 
-    if (saleCanceled(self)) {
+    if(!self.isFinalized){
+      require(setCanceled(self));
+      require(self.isCanceled);
+    }
+
+    if (self.isCanceled) {
       // if the sale was canceled, everyone gets a full refund
       self.base.leftoverWei[msg.sender] += self.base.hasContributed[msg.sender];
       self.base.hasContributed[msg.sender] = 0;
-      LogErrorMsg(self.totalValuation, "totalValuation has not reached the minimumRaise. All bids have been refunded!");
+      LogErrorMsg(self.totalValuation, "Sale is canceled, all bids have been refunded!");
       return true;
     }
 
@@ -545,13 +584,9 @@ library InteractiveCrowdsaleLib {
       return self.base.withdrawLeftoverWei();
 
     } else if (self.personalCaps[msg.sender] == self.totalValuation) {
-      uint256 q;
-
-      // calculate the fraction of each minimal valuation bidders ether and tokens to refund
-      q = (100*(self.valueCommitted - self.totalValuation)/(self.valuationSums[self.totalValuation])) + 1;
 
       // calculate the portion that this address has to take out of their bid
-      uint256 refundAmount = (q*self.base.hasContributed[msg.sender])/100;
+      uint256 refundAmount = (self.q*self.base.hasContributed[msg.sender])/100;
 
       // refund that amount of wei to the address
       self.base.leftoverWei[msg.sender] += refundAmount;
@@ -564,7 +599,9 @@ library InteractiveCrowdsaleLib {
     LogErrorMsg(self.pricePurchasedAt[msg.sender],"price");
 
     // calculate the number of tokens that the bidder purchased
-    (numTokens, remainder) = calculateTokenPurchase(self,self.base.hasContributed[msg.sender],self.pricePurchasedAt[msg.sender]);
+    (numTokens, remainder) = calculateTokenPurchase(self,
+                                                    self.base.hasContributed[msg.sender],
+                                                    self.pricePurchasedAt[msg.sender]);
 
     // add tokens to the bidders purchase.  can't overflow because it will be under the cap
     self.base.withdrawTokensMap[msg.sender] += numTokens;
@@ -591,11 +628,6 @@ library InteractiveCrowdsaleLib {
 
    /*Functions "inherited" from CrowdsaleLib library*/
 
-  function withdrawTokens(InteractiveCrowdsaleStorage storage self) internal returns (bool) {
-
-    return self.base.withdrawTokens();
-  }
-
   function withdrawLeftoverWei(InteractiveCrowdsaleStorage storage self) internal returns (bool) {
 
     return self.base.withdrawLeftoverWei();
@@ -616,10 +648,6 @@ library InteractiveCrowdsaleLib {
 
   function getPersonalCap(InteractiveCrowdsaleStorage storage self, address _bidder) internal view returns (uint256) {
     return self.personalCaps[_bidder];
-  }
-
-  function getSaleData(InteractiveCrowdsaleStorage storage self, uint256 _timestamp) internal view returns (uint256[3]) {
-    return self.base.getSaleData(_timestamp);
   }
 
   function getTokensSold(InteractiveCrowdsaleStorage storage self) internal view returns (uint256) {

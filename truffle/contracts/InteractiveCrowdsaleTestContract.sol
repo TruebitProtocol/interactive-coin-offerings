@@ -1,4 +1,4 @@
-pragma solidity ^0.4.15;
+pragma solidity ^0.4.18;
 
 /****************
 *
@@ -52,10 +52,6 @@ contract InteractiveCrowdsaleTestContract {
 
   function withdrawBid() public returns (bool) {
     return sale.withdrawBid();
-  }
-
-  function withdrawTokens() public returns (bool) {
-    return sale.withdrawTokens();
   }
 
   function withdrawLeftoverWei() public returns (bool) {
@@ -114,10 +110,6 @@ contract InteractiveCrowdsaleTestContract {
     return sale.base.hasContributed[_buyer];
   }
 
-  function getTokenPurchase(address _buyer) public view returns (uint256) {
-    return sale.base.withdrawTokensMap[_buyer];
-  }
-
   function getLeftoverWei(address _buyer) public view returns (uint256) {
     return sale.base.leftoverWei[_buyer];
   }
@@ -128,10 +120,6 @@ contract InteractiveCrowdsaleTestContract {
 
   function getPrice(address _bidder) public view returns (uint256) {
     return sale.pricePurchasedAt[_bidder];
-  }
-
-  function getSaleData(uint256 timestamp) public view returns (uint256[3]) {
-    return sale.getSaleData(timestamp);
   }
 
   function getTokensSold() public view returns (uint256) {
@@ -152,5 +140,13 @@ contract InteractiveCrowdsaleTestContract {
 
   function getTokenAddress() public view returns (address) {
     return address(sale.base.token);
+  }
+
+  function getValueCommitement(uint256 bucket) public view returns (uint256) {
+    return sale.valuationSums[bucket];
+  }
+
+  function getOwnerBalance() public view returns (uint256) {
+    return sale.base.ownerBalance;
   }
 }

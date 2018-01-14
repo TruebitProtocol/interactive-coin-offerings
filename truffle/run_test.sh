@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # https://github.com/OpenZeppelin/zeppelin-solidity/blob/master/scripts/test.sh
-
+# SOLIDITY_COVERAGE=true
 # Exit script as soon as a command fails.
 set -o errexit
 
@@ -25,7 +25,7 @@ testrpc_running() {
 }
 
 start_testrpc() {
-  # We define 20 accounts with balance 1M ether, needed for high-value tests.
+  # We define 58 accounts with balance 1M ether, needed for high-value tests.
   local accounts=(
     --account="0xee4e871def4e297da77f99d57de26000e86077528847341bc637d2543f8db6e2, 1000000000000000000000000"
     --account="0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201, 1000000000000000000000000"

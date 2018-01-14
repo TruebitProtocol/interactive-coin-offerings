@@ -1,5 +1,5 @@
 const sendAsync = (params) => new Promise((resolve, reject) => {
-  web3.currentProvider.sendAsync(params, function(err, res) {
+  web3.currentProvider.sendAsync(params, function (err, res) {
     if (err) {
       reject(err)
     } else {
@@ -9,7 +9,7 @@ const sendAsync = (params) => new Promise((resolve, reject) => {
 })
 
 // Limited for use on the testrpc
-module.exports = (s, opts={}) => {
+module.exports = (s, opts = {}) => {
   return sendAsync({
     jsonrpc: '2.0',
     method: 'evm_increaseTime',
