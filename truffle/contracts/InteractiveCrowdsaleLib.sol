@@ -192,13 +192,11 @@ library InteractiveCrowdsaleLib {
 
   /// @dev calculates the number of tokens purchased based on the amount of wei
   ///      spent and the price of tokens
-  /// @param self Stored crowdsale from crowdsale contract
   /// @param _amount amound of wei that the buyer sent
   /// @param _price price of tokens in the sale, in tokens/ETH
   /// @return uint256 numTokens the number of tokens purchased
   /// @return remainder  any remaining wei leftover from integer division
-  function calculateTokenPurchase(InteractiveCrowdsaleStorage storage self,
-                                  uint256 _amount,
+  function calculateTokenPurchase(uint256 _amount,
                                   uint256 _price)
                                   internal
                                   view
@@ -597,10 +595,9 @@ library InteractiveCrowdsaleLib {
 
     LogErrorMsg(self.base.hasContributed[msg.sender],"contribution");
     LogErrorMsg(self.pricePurchasedAt[msg.sender],"price");
-
+    LogErrorMsg(self.q,"percentage");
     // calculate the number of tokens that the bidder purchased
-    (numTokens, remainder) = calculateTokenPurchase(self,
-                                                    self.base.hasContributed[msg.sender],
+    (numTokens, remainder) = calculateTokenPurchase(self.base.hasContributed[msg.sender],
                                                     self.pricePurchasedAt[msg.sender]);
 
     // add tokens to the bidders purchase.  can't overflow because it will be under the cap
@@ -611,7 +608,7 @@ library InteractiveCrowdsaleLib {
     // burn any extra bonus tokens
     uint256 _fullBonus;
     uint256 _fullBonusPrice = (self.base.tokensPerEth*(100 + self.priceBonusPercent))/100;
-    (_fullBonus, remainder) = calculateTokenPurchase(self, self.base.hasContributed[msg.sender], _fullBonusPrice);
+    (_fullBonus, remainder) = calculateTokenPurchase(self.base.hasContributed[msg.sender], _fullBonusPrice);
     uint256 _leftoverBonus = _fullBonus - numTokens;
     self.base.token.burnToken(_leftoverBonus);
 

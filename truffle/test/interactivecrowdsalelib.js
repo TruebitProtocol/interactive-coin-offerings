@@ -10,8 +10,7 @@ const InteractiveCrowdsaleTestContract = artifacts.require('InteractiveCrowdsale
 // can also set sale as a global up here and carry it throughout
 // var sale;
 contract('InteractiveCrowdsaleTestContract', function (accounts) {
-  let sale, startTime, endWithdrawlTime, endTime, afterEndTime, token, simulation
-  let purchaseData = [startTime, 1000000000000000000000, 0]
+  let sale, startTime, endWithdrawlTime, endTime, afterEndTime, token, simulation, purchaseData
 
   context('Moving pointer', async () => {
     before(async function () {
@@ -19,6 +18,8 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
       endWithdrawlTime = startTime + duration.weeks(100)
       endTime = startTime + duration.years(2)
       afterEndTime = endTime + duration.seconds(1)
+
+      purchaseData = [startTime, 1000000000000000000000, 0]
 
       sale = await InteractiveCrowdsaleTestContract.new(accounts[5],
                                                        purchaseData,
@@ -33,7 +34,7 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
                                                        false)
     })
 
-    it('Calculates moving pointer correctly', async () => {
+    it('calculates the pointer correctly', async () => {
       await increaseTimeTo(startTime)
       simulation = await simulate(accounts, sale)
       // console.log('fetched Pointers: ', simulation.fetchedValuationPointer);
@@ -45,7 +46,7 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
       }
     })
 
-    it('Has correct ETH refunds during the sale', async () => {
+    it('gives correct ETH refunds during the sale', async () => {
       var ethBalance
 
       for (var i = 1; i < accounts.length; i++) {
@@ -76,7 +77,7 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
       assert.isTrue(error, 'Token withdraw should throw an error if the owner has not finalized the sale')
     })
 
-    it('Initializes token correctly', async () => {
+    it('initializes token correctly', async () => {
       await sale.finalizeSale()
 
       const tokenAddress = await sale.getTokenAddress.call()
@@ -120,7 +121,7 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
       }
     })
 
-    it('Gives full token purchases to bidders above the total valuation', async () => {
+    it('gives full token purchases to bidders above the total valuation', async () => {
       for (var i = 1; i < accounts.length; i++) {
         // console.log('cap: '+simulation.personalCaps[i])
         if ((simulation.personalCaps[i] > simulation.totalValuation) && (i !== 5)) {
@@ -161,7 +162,7 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
       }
     })
 
-    it('Gives correctly splits the token/eth distro for users at the valuation', async () => {
+    it('correctly splits the token/eth distro for users at the valuation', async () => {
       for (var i = 1; i < accounts.length; i++) {
         // console.log('cap: '+simulation.personalCaps[i])
         if ((simulation.personalCaps[i] === simulation.totalValuation) && (i !== 5)) {
@@ -178,6 +179,7 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
           percentageOfThePie = parseInt(percentageOfThePie) / 100
           // console.log('price: '+price.toString())
           // console.log('contribute: '+hasContributed.toString())
+          // console.log('percentage: '+percentageOfThePie)
 
           let tokenPurchase = price.mul(hasContributed.mul(percentageOfThePie))
           let divisor = new BN('1000000000000000000', 10)
@@ -215,6 +217,8 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
       endWithdrawlTime = startTime + duration.weeks(100)
       endTime = startTime + duration.years(2)
       afterEndTime = endTime + duration.seconds(1)
+
+      purchaseData = [startTime, 1000000000000000000000, 0]
 
       sale = await InteractiveCrowdsaleTestContract.new(accounts[5],
                                                        purchaseData,
@@ -288,6 +292,8 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
       endTime = startTime + duration.years(2)
       afterEndTime = endTime + duration.seconds(1)
 
+      purchaseData = [startTime, 1000000000000000000000, 0]
+
       sale = await InteractiveCrowdsaleTestContract.new(accounts[5],
                                                        purchaseData,
                                                        20,
@@ -301,7 +307,7 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
                                                        false)
     })
 
-    it('Can\'t submit bid if sale hasn\'t started', async () => {
+    it('disallows bid submission if sale hasn\'t started', async () => {
       let err = false
       try {
         await sale.submitBid(100000000, 0, { from:accounts[2], value:1000000 })
@@ -311,14 +317,14 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
       assert.isTrue(err, 'should give an error message since sale has not started')
     })
 
-    it('should accept a bid', async () => {
+    it('should accept a bid if the sale has started', async () => {
       await increaseTimeTo(startTime)
       await sale.submitBid(100000000, 0, { from:accounts[0], value:1000000 })
       const cont = await sale.getContribution.call(accounts[0])
       cont.should.be.bignumber.equal(1000000)
     })
 
-    it('Can\'t submit bid if bidder already bidded', async () => {
+    it('disallows bid submission if bidder previously bid', async () => {
       let err = false
       try {
         await sale.submitBid(200000000, 0, { from:accounts[0], value:2000000 })
@@ -376,6 +382,8 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
       endTime = startTime + duration.weeks(4)
       afterEndTime = endTime + duration.seconds(1)
 
+      purchaseData = [startTime, 1000000000000000000000, 0]
+
       sale = await InteractiveCrowdsaleTestContract.new(accounts[0],
                                                        purchaseData,
                                                        20,
@@ -389,7 +397,7 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
                                                        false)
     })
 
-    it('Calculates withdraw amount correctly', async () => {
+    it('calculates withdraw amount correctly', async () => {
       const contrib = 1000000000000000000
       await increaseTimeTo(startTime)
       await sale.submitBid(100000000000000000000, 0, { from: accounts[1], value: contrib })
@@ -418,7 +426,7 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
       balance.should.be.bignumber.equal(contrib)
     })
 
-    it('Adjusts the purchase price after withdrawal penalty correctly', async () => {
+    it('adjusts the purchase price after withdrawal penalty correctly', async () => {
       const contrib = 50000000000
       await sale.submitBid(150000000000000000000, 100000000000000000000, { from: accounts[2], value: contrib })
 
@@ -432,7 +440,7 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
       assert.equal(secondPrice.toNumber(), 1060000000000000000000, 'Bonus should be reduced by 1/3 to 6% bonus')
     })
 
-    it('Denies eth withdrawal after a previous withdrawal', async () => {
+    it('denies eth withdrawal after a previous withdrawal', async () => {
       let error = false
       try {
         await sale.withdrawBid({ from:accounts[2] })
@@ -443,7 +451,7 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
       assert.isTrue(error, 'Bid withdraw should throw an error if the sender has already manually withdrawn')
     })
 
-    it('Denies eth withdrawal after withdrawal lock if the cap is at or above valuation', async () => {
+    it('denies eth withdrawal after withdrawal lock if the cap is at or above valuation', async () => {
       let error = false
       await sale.submitBid(150000000000000000000, 150000000000000000000, { from: accounts[3], value: 1000 })
       await increaseTimeTo(latestTime() + duration.days(4))
@@ -479,6 +487,8 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
       endTime = startTime + duration.weeks(4)
       afterEndTime = endTime + duration.seconds(1)
 
+      purchaseData = [startTime, 1000000000000000000000, 0]
+
       sale = await InteractiveCrowdsaleTestContract.new(accounts[0],
                                                        purchaseData,
                                                        20,
@@ -492,7 +502,7 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
                                                        false)
     })
 
-    it('submits 100 ETH', async () => {
+    it('accepts 100 ETH', async () => {
       const contrib = 10000000000000000000
       await increaseTimeTo(startTime)
       await sale.submitBid(200000000000000000000, 0, { from: accounts[1], value: contrib })
@@ -505,20 +515,20 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
       committed.should.be.bignumber.equal(100000000000000000000)
     })
 
-    it('Should not have a token yet', async () => {
+    it('should not have a token before finalization', async () => {
       const tokenAddress = await sale.getTokenAddress.call()
       assert.equal(tokenAddress, '0x0000000000000000000000000000000000000000',
         'Token should have address 0 before finalizing the sale.')
     })
 
-    it('Moves to after the end time', async () => {
+    it('moves to after the end time', async () => {
       await increaseTimeTo(afterEndTime)
       const ended = await sale.crowdsaleEnded.call()
 
       assert.isTrue(ended, 'Crowdsale should show as ended')
     })
 
-    it('Launches the new token when finalized', async () => {
+    it('launches the new token when finalized', async () => {
       await sale.finalizeSale()
 
       const tokenAddress = await sale.getTokenAddress.call()
@@ -527,7 +537,7 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
       assert.equal(tokenName, 'Jason Token', 'Tokens should be created after the sale is finalized')
     })
 
-    it('Launches the correct amount of tokens', async () => {
+    it('launches the correct amount of tokens', async () => {
       // 100 ETH sale value divided by 50% of total tokens sold + bonus tokens
       const calculatedTokens = '220000000000000000000000'
 
@@ -535,19 +545,19 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
       initSupply.should.be.bignumber.equal(calculatedTokens)
     })
 
-    it('Gives the correct amount of tokens to the owner', async () => {
+    it('gives the correct amount of tokens to the owner', async () => {
       const calcOwnerBalance = '100000000000000000000000'
       const ownerBalance = await token.balanceOf.call(accounts[0])
       ownerBalance.should.be.bignumber.equal(calcOwnerBalance)
     })
 
-    it('Gives the correct amount of tokens to the contract', async () => {
+    it('gives the correct amount of tokens to the contract', async () => {
       const calcContractBalance = '120000000000000000000000'
       const contractBalance = await token.balanceOf.call(sale.address)
       contractBalance.should.be.bignumber.equal(calcContractBalance)
     })
 
-    it('Allows owner to withdraw eth from the sale', async () => {
+    it('allows owner to withdraw eth from the sale', async () => {
       await sale.withdrawOwnerEth({ from:accounts[0] })
       const bal = await sale.getOwnerBalance.call()
       assert.equal(bal.toNumber(), 0, 'Owner balance should be zero')
@@ -560,6 +570,8 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
       endWithdrawlTime = startTime + duration.weeks(2)
       endTime = startTime + duration.weeks(4)
       afterEndTime = endTime + duration.seconds(1)
+
+      purchaseData = [startTime, 1000000000000000000000, 0]
 
       sale = await InteractiveCrowdsaleTestContract.new(accounts[5],
                                                        purchaseData,
@@ -594,7 +606,7 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
       assert.isTrue(err, 'Retrieval should be denied if the owner hasn\'t finalized the sale')
     })
 
-    it('should give all tokens to the owner after cancellation', async () => {
+    it('should give all tokens to the owner after if canceled', async () => {
       await increaseTimeTo(afterEndTime + duration.days(31))
       await sale.finalizeSale({ from:accounts[5] })
 
@@ -605,7 +617,7 @@ contract('InteractiveCrowdsaleTestContract', function (accounts) {
       ownerBalance.should.be.bignumber.equal(2000000000000000000000)
     })
 
-    it('should give a full refund to the bidder', async () => {
+    it('should give a full refund to the bidder if canceled', async () => {
       await sale.retreiveFinalResult({ from:accounts[0] })
 
       const leftover = await sale.getLeftoverWei.call(accounts[0])
