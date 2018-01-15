@@ -22,7 +22,7 @@ module.exports = function(deployer, network, accounts) {
   //deployer.deploy(CrowdsaleToken, accounts[5], "Tester Token", "TST", 18, 20000000000000000000000000, false, {from:accounts[5]});
 
 
-  if(network == "development"){
+  if(network == "development" || network == "coverage"){
     deployer.link(BasicMathLib,InteractiveCrowdsaleTestContract);
     deployer.link(CrowdsaleLib,InteractiveCrowdsaleTestContract);
     deployer.link(InteractiveCrowdsaleLib, InteractiveCrowdsaleTestContract);
