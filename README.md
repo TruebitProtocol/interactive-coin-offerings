@@ -57,10 +57,10 @@ A crowdsale library to use for interactive crowdsale contract deployment.
 
 ## Library Address   
 
-**ENS**:
-**Main Ethereum Network**:    
-**Ropsten Test Network**:    
-**Rinkeby Test Network**:    
+**ENS**: TBD   
+**Main Ethereum Network**: 0xbb03C8c529CcE73Ee350A4eBB2A6F712A8E9e348    
+**Ropsten Test Network**: Not available at this time.    
+**Rinkeby Test Network**: 0xb70364d1C6eCFa89526e7B40dFA2270BBEfFA853    
 
 ## How to install
 
@@ -271,12 +271,12 @@ The bidders submit a prediction for where to start searching in the list. We cho
 
 The following is the list of functions available to use in your smart contract.
 
-#### init(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage, address, uint256[], uint256, uint256,uint256 uint256, uint8, string, string, uint8, bool)   
+### init(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage, address, uint256[], uint256, uint256,uint256 uint256, uint8, string, string, uint8, bool)   
 *(InteractiveCrowdsaleLib.sol, line 144)*
 
 Constructor. Initialize the crowdsale with owner, sale data, bonus percentage, minimum raise, Time of thw withdrawal lock, endTime, percent of tokens being sold, token Name, token Symbol, token number of Decimals, and an indication to allow minting of tokens or not.  Passes some values to the base constructor then sets the interactive crowdsale specific storage variables.
 
-##### Arguments
+#### Arguments
 **InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage** `self`   
 **address[]** `_owner` Address of crowdsale owner   
 **uint256[]** `_saleData` intital sale data(startTime,initialtokensPerEth)  
@@ -289,111 +289,112 @@ Constructor. Initialize the crowdsale with owner, sale data, bonus percentage, m
 **string** `_tokenSymbol` The symbol for the token for the ERC20 contract  
 **uint8** `_tokenDecimals` number of decimals for the token  
 **bool** `_allowMinting` indicates if minting of the token should be allowed after the sale.
-##### Returns
+
+#### Returns
 No return   
 
-#### numDigits(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage, uint256)   
+### numDigits(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage, uint256)   
 *(InteractiveCrowdsaleLib.sol, line 184)*
 
 Gets the number of digits in `_number`. Used to enforce spaced buckets for personal valuation caps.
 
-##### Arguments
+#### Arguments
 **InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage** `self`  
 **uint256** `_number` the number to find the number of digits for.  
 
-##### Returns
+#### Returns
 **uint256**   
 
-#### calculateTokenPurchase(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage, uint256, uint256)   
+### calculateTokenPurchase(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage, uint256, uint256)   
 *(InteractiveCrowdsaleLib.sol, line 199)*
 
 Calculates the number of tokens purchased based on the amount of wei spent and the price of tokens.
 
-##### Arguments
+#### Arguments
 **InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage** `self`  
 **uint256** `_amount` amount of wei sent in the purchase
 **uint256** `_price` the price of the tokens being purchased  
 
-##### Returns
+#### Returns
 **uint256** `numTokens`  number of tokens purchased
 **uint256** `remainder`  wei leftover from the purchase  
 
-#### getCurrentBonus(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage)   
+### getCurrentBonus(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage)   
 *(InteractiveCrowdsaleLib.sol, line 225)*
 
 Called when an address wants to submit bid to the sale. This caluculates the bonus percentage the address receives when submitting bids.  The bonus gradually decreases from self.priceBonusPercent to zero from the beginning to the end of the first stage. After the withdrawal lock, there is no bonus.
 
-##### Arguments
+#### Arguments
 **InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage** `self`  
 
-##### Returns
+#### Returns
 **bool**   
 
-#### submitBid(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage, uint256, uint256, uint256)   
+### submitBid(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage, uint256, uint256, uint256)   
 *(InteractiveCrowdsaleLib.sol, line 246)*
 
 Allows participants to submit ETH bids with a personal cap and linked list spot prediction.  First, the function checks to see if the bid is valid.  Then it inserts the personal valuation cap into the linked list, if necessary.  It then updates the participants bid records. Lastly, it performs the operations to assign the new valuation pointer to the correct bucket.  It then logs the current token price and emits an event.
 
-##### Arguments
+#### Arguments
 **InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage** `self`   
 **uint256** `_amount` the amount of ETH the bidder sent
 **uint256** `_personalCap` the user's personal valuation cap
 **uint256** `_valuePredict` prediction of where the cap will go in the linked list
 
-##### Returns
+#### Returns
 **bool**   
 
-#### withdrawBid(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage)   
+### withdrawBid(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage)   
 *(InteractiveCrowdsaleLib.sol, line 360)*
 
 Withdraws the participant's bid from the sale. If it is after the withdrawal lock and the participant has a minimal personal cap, they get a full refund.  If it is before the withdrawal lock, they receive a partial refund of the ETH.  The withheld ETH still goes towards their token purchase, but is committed to the end of the sale.  Then, if it is before the withdrawal lock, the valuation pointer is updated to reflect the new sale valuation.
 
-##### Arguments
+#### Arguments
 **InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage** `self`  
 
-##### Returns
+#### Returns
 **bool**   
 
-#### finalizeSale(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage)   
+### finalizeSale(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage)   
 *(InteractiveCrowdsaleLib.sol, line 473)*
 
 This should be called once the sale is over to launch the token and record the total ETH raised into the owners withdrawal bucket.
 
-##### Arguments
+#### Arguments
 **InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage** `self`  
 
-##### Returns
+#### Returns
 **bool**   
 
-#### launchToken(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage)   
+### launchToken(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage)   
 *(InteractiveCrowdsaleLib.sol, line 501)*
 
 Mints the token being sold by taking the percentage of the token supply being sold in this sale along with the valuation, derives all necessary values, launches the token contract, and then transfers owner tokens to the owner.  If the sale did not reach the minimum valuation, all the tokens are transferred to the owner and all participant's ETH is available for refund.
 
-##### Arguments
+#### Arguments
 **InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage** `self`  
 
-##### Returns
+#### Returns
 **bool**   
 
-#### setCanceled(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage)   
+### setCanceled(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage)   
 *(InteractiveCrowdsaleLib.sol, line 541)*
 
 Returns a boolean indicating if the sale is canceled. This can either be if the minimum raise hasn't been met or if it is 30 days after the sale and the owner hasn't finalized the sale.
 
-##### Arguments
+#### Arguments
 **InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage** `self`  
 
-##### Returns
+#### Returns
 **bool**   
 
-#### retreiveFinalResult(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage)   
+### retreiveFinalResult(InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage storage)   
 *(InteractiveCrowdsaleLib.sol, line 554)*
 
 Called by participants after the sale ends.  Finalizes a participant's participation in the sale.  If the address' personal cap is below the pointer or the sale is cancelled, refund them all their ETH. If their personal valuation cap is equal to the total valuation, they get a partial ETH refund and a partial token purchase.  If their personal valuation cap is greater than the total valuation, the function calculates tokens purchased and sends them their tokens.  This is the last function participants have to call.
 
-##### Arguments
+#### Arguments
 **InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage** `self`  
 
-##### Returns
+#### Returns
 **bool**   

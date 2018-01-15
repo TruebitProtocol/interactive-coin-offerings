@@ -5,14 +5,14 @@ pragma solidity ^0.4.18;
  * @author Modular Inc, https://modular.network
  *
  * version 2.2.1
- * Copyright (c) 2017 Majoolr, LLC
+ * Copyright (c) 2017 Modular, Inc
  * The MIT License (MIT)
- * https://github.com/Majoolr/ethereum-libraries/blob/master/LICENSE
+ * https://github.com/Modular-Network/ethereum-libraries/blob/master/LICENSE
  *
  * The Crowdsale Library provides basic functionality to create an initial coin
  * offering for different types of token sales.
  *
- * Majoolr provides smart contract services and security reviews for contract
+ * Modular provides smart contract services and security reviews for contract
  * deployments in addition to working on open source projects in the Ethereum
  * community. Our purpose is to test, document, and deploy reusable code onto the
  * blockchain and improve both security and usability. We also educate non-profits,
@@ -239,12 +239,11 @@ library CrowdsaleLib {
   function setTokens(CrowdsaleStorage storage self) public returns (bool) {
     require(msg.sender == self.owner);
     require(!self.tokensSet);
-    // purposely only before endTime
     require(now < self.endTime);
 
     uint256 _tokenBalance;
 
-    _tokenBalance = self.ownerBalance;
+    _tokenBalance = self.token.balanceOf(this);
     self.withdrawTokensMap[msg.sender] = _tokenBalance;
     self.startingTokenBalance = _tokenBalance;
     self.tokensSet = true;

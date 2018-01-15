@@ -199,7 +199,7 @@ library InteractiveCrowdsaleLib {
   function calculateTokenPurchase(uint256 _amount,
                                   uint256 _price)
                                   internal
-                                  view
+                                  pure
                                   returns (uint256,uint256)
   {
     uint256 remainder = 0; //temp calc holder for division remainder for leftover wei
