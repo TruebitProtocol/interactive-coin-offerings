@@ -278,7 +278,7 @@ Constructor. Initialize the crowdsale with owner, sale data, bonus percentage, m
 
 #### Arguments
 **InteractiveCrowdsaleLib.InteractiveCrowdsaleStorage** `self`   
-**address[]** `_owner` Address of crowdsale owner   
+**address** `_owner` Address of crowdsale owner   
 **uint256[]** `_saleData` intital sale data(startTime,initialtokensPerEth)  
 **uint256** `_priceBonusPercent` percentage of the token price that participants receive as an additional token purchase at the beginning of the sale.   
 **uint256** `_minimumRaise` the minimim ETH raise the sale can have to be successful.   
