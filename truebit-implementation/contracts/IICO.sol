@@ -185,7 +185,7 @@ contract IICO {
             redeemed: false,
 			minBucketID: minBucketID,
 			maxBucketID: maxBucketID,
-			active: (currentValuation+msg.value > _maxCap) ? false: true
+			active: (currentValuation+msg.value > _maxCap || currentValuation+msg.value < _personalMin) ? false: true
         });
 
 		/* Update the current valuation and the buckets. */
