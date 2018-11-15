@@ -192,6 +192,8 @@ contract IICO {
 			maxBucketID: maxBucketID
         });
 
+		/* Update the current valuation and the buckets. */
+		/* At this point someone may be able to poke a bucket which has inactive bids */
 		currentValuation = currentValuation + msg.value;
         buckets[maxBucketID].maxCapBids.push(lastBidID);
         buckets[minBucketID].personalMinBids.push(lastBidID); 
@@ -221,6 +223,9 @@ contract IICO {
         bid.contrib -= refund;
         bid.bonus = (bid.bonus * 2) / 3; // Reduce the bonus by 1/3.
 
+		/* Only subtract the refund. */
+		currentValuation -= refund; 
+
         msg.sender.transfer(refund);
     }
 
@@ -231,7 +236,6 @@ contract IICO {
      *  Each call only has a O(1) storage write operations.
      *  @param _maxIt The maximum amount of bids to go through. This value must be set in order to not exceed the gas limit.
      */
-
     function finalize(uint _maxIt) public {
         require(now >= endTime);
         require(!finalized);
