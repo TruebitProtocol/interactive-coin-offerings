@@ -61,6 +61,7 @@ contract IICO {
     mapping (uint => BidBucket) public buckets; // Map bucketID to bucket.
     mapping (address => uint[]) public contributorBidIDs; // Map contributor to a list of its bid ID.
     uint public lastBidID = 0; // The last bidID not accounting TAIL.
+	uint public currentValuation = 0;
 
     /* *** Sale parameters *** */
     uint public startTime;                      // When the sale starts.
@@ -191,6 +192,7 @@ contract IICO {
 			maxBucketID: maxBucketID
         });
 
+		currentValuation = currentValuation + msg.value;
         buckets[maxBucketID].maxCapBids.push(lastBidID);
         buckets[minBucketID].personalMinBids.push(lastBidID); 
 
@@ -199,12 +201,6 @@ contract IICO {
 
     }
 	
-	/**
-	 *	DEPRECATED: NO LONGER NEEDED FOR TRUEBIT IMPLEMENTATION
-	 */
-    function searchAndBid(uint _maxValuation, uint _next) public payable {
-        submitBid(_maxValuation, search(_maxValuation,_next));
-    }
 
     /** @dev Withdraw a bid. Can only be called before the end of the withdrawal lock period.
      *  Withdrawing a bid reduces its bonus by 1/3.
@@ -310,29 +306,6 @@ contract IICO {
 
     /* *** View Functions *** */
 
-    /**
-     * DEPRECATED, NO LONGER NECESSARY FOR TRUEBIT ICO
-     */
-	function search(uint _maxValuation, uint _nextStart) view public returns(uint nextInsert) {
-        uint next = _nextStart;
-        bool found;
-
-        while(!found) { // While we aren't at the insertion point.
-            Bid storage nextBid = bids[next];
-            uint prev = nextBid.prev;
-            Bid storage prevBid = bids[prev];
-
-            if (_maxValuation < prevBid.maxValuation)       // It should be inserted before.
-                next = prev;
-            else if (_maxValuation >= nextBid.maxValuation) // It should be inserted after. The second value we sort by is bidID. Those are increasing, thus if the next bid is of the same maxValuation, we should insert after it.
-                next = nextBid.next;
-            else                                // We found the insertion point.
-                found = true;
-        }
-
-        return next;
-    }
-
     /** @dev Return the current bonus. The bonus only changes in 1/BONUS_DIVISOR increments.
      *  @return b The bonus expressed in 1/BONUS_DIVISOR. Will be normalized by BONUS_DIVISOR. For example for a 20% bonus, _maxBonus must be 0.2 * BONUS_DIVISOR.
      */
@@ -401,29 +374,4 @@ contract IICO {
 		return maxBids;
 	}	
 
-    /* *** Interface Views *** */
-
-   	/**
-	 * DEPRECATED: NO LONGER USED FOR TRUEBIT
-	 */
-	function valuationAndCutOff() public view returns (uint valuation, uint virtualValuation, uint currentCutOffBidID, uint currentCutOffBidmaxValuation, uint currentCutOffBidContrib) {
-        currentCutOffBidID = bids[TAIL].prev;
-
-        // Loop over all bids or until cut off bid is found
-        while (currentCutOffBidID != HEAD) {
-            Bid storage bid = bids[currentCutOffBidID];
-            if (bid.contrib + valuation < bid.maxValuation) { // We haven't found the cut-off yet.
-                valuation += bid.contrib;
-                virtualValuation += bid.contrib + (bid.contrib * bid.bonus) / BONUS_DIVISOR;
-                currentCutOffBidID = bid.prev; // Go to the previous bid.
-            } else { // We found the cut-off bid. This bid will be taken partially.
-                currentCutOffBidContrib = bid.maxValuation >= valuation ? bid.maxValuation - valuation : 0; // The amount of the contribution of the cut-off bid that can stay in the sale without spilling over the maxValuation.
-                valuation += currentCutOffBidContrib;
-                virtualValuation += currentCutOffBidContrib + (currentCutOffBidContrib * bid.bonus) / BONUS_DIVISOR;
-                break;
-            }
-        }
-
-        currentCutOffBidmaxValuation = bids[currentCutOffBidID].maxValuation;
-    }
 }
