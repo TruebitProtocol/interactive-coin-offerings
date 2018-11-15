@@ -15,10 +15,11 @@ contract('IICO', function (accounts) {
   let withdrawalLockUpLength = 2500
   let maxBonus = 2E8
   let noCap = 120000000E18 // for placing bids with no cap
-  let minValuation = web3.toWei(1000, 'ether')
+//  let minValuation = web3.toWei(1000, 'ether')
+  let minValuation = 0
   let maxValuation = web3.toWei(100000, 'ether')
   let increment = web3.toWei(0.5, 'ether') 
-  let numBuckets = 198001
+  let numBuckets = 200001
 	let tx, log
 
   // Constructor
@@ -89,12 +90,15 @@ contract('IICO', function (accounts) {
 		assert.equal(bid[6], buyerA)
 		assert.equal(bid[7], false)
 		assert.equal(bid[8], false)
+		assert.equal(bid[9].toNumber(), 0)
+		assert.equal(bid[10].toNumber(), numBuckets-1)
 		// TODO: fix the god damn min bucket valuation
 		// Check the bucket got filled
-		let bucketMinBids = await iico.bucketMinBids(198000)
-		let bucketMaxBids = await iico.bucketMaxBids(198000)
-		assert.equal(bucketMinBids.length, 0)
+		let bucketMinBids = await iico.bucketMinBids(0)
+		let bucketMaxBids = await iico.bucketMaxBids(numBuckets-1)
+		assert.equal(bucketMinBids.length, 1)
 		assert.equal(bucketMaxBids.length, 1)
+		assert.equal(bucketMinBids[0].toNumber(), 1)
 		assert.equal(bucketMaxBids[0].toNumber(), 1)
 
 	})
