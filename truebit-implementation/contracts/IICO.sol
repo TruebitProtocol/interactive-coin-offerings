@@ -182,21 +182,17 @@ contract IICO {
             redeemed: false
         });
 
-//        buckets[maxBucketID].maxCapBids.push(lastBidID);
-//        buckets[minBucketID].personalMinBids.push(lastBidID); 
+        buckets[maxBucketID].maxCapBids.push(lastBidID);
+        buckets[minBucketID].personalMinBids.push(lastBidID); 
 
         contributorBidIDs[msg.sender].push(lastBidID);
         emit BidSubmitted(msg.sender, lastBidID, now); 
 
     }
-
-    /** @dev Search for the correct insertion spot and submit a bid.
-     *  This function is O(n), where n is the amount of bids between the initial search position and the insertion position.
-     *  The UI must first call search to find the best point to start the search such that it consumes the least amount of gas possible.
-     *  Using this function instead of calling submitBid directly prevents it from failing in the case where new bids are added before the transaction is executed.
-     *  @param _maxValuation The maximum valuation given by the contributor. If the amount raised is higher, the bid is cancelled and the contributor refunded because it prefers a refund instead of this level of dilution. To buy no matter what, use INFINITY.
-     *  @param _next The bidID of the next bid in the list.
-     */
+	
+	/**
+	 *	DEPRECATED: NO LONGER NEEDED FOR TRUEBIT IMPLEMENTATION
+	 */
     function searchAndBid(uint _maxValuation, uint _next) public payable {
         submitBid(_maxValuation, search(_maxValuation,_next));
     }
@@ -223,22 +219,6 @@ contract IICO {
         msg.sender.transfer(refund);
     }
 
-    function withdraw1(uint _bidID) public {
-        Bid storage bid = bids[_bidID];
-        require(msg.sender == bid.contributor);
-        require(now < withdrawalLockTime);
-        require(!bid.withdrawn);
-
-        bid.withdrawn = true;
-
-        // Before endFullBonusTime, everything is refunded. Otherwise, an amount decreasing linearly from endFullBonusTime to withdrawalLockTime is refunded.
-        uint refund = (now < endFullBonusTime) ? bid.contrib : (bid.contrib * (withdrawalLockTime - now)) / (withdrawalLockTime - endFullBonusTime);
-        assert(refund <= bid.contrib); // Make sure that we don't refund more than the contribution. Would a bug arise, we prefer blocking withdrawal than letting someone steal money.
-        bid.contrib -= refund;
-        bid.bonus = (bid.bonus * 2) / 3; // Reduce the bonus by 1/3.
-
-        msg.sender.transfer(refund);
-    }
 
     /** @dev Finalize by finding the cut-off bid.
      *  Since the amount of bids is not bounded, this function may have to be called multiple times.
@@ -246,6 +226,7 @@ contract IICO {
      *  Each call only has a O(1) storage write operations.
      *  @param _maxIt The maximum amount of bids to go through. This value must be set in order to not exceed the gas limit.
      */
+
     function finalize(uint _maxIt) public {
         require(now >= endTime);
         require(!finalized);
@@ -316,13 +297,10 @@ contract IICO {
 
     /* *** View Functions *** */
 
-    /** @dev Search for the correct insertion spot of a bid.
-     *  This function is O(n), where n is the amount of bids between the initial search position and the insertion position.
-     *  @param _maxValuation The maximum valuation given by the contributor. Or INFINITY if no maximum valuation is given.
-     *  @param _nextStart The bidID of the next bid from the initial position to start the search from.
-     *  @return nextInsert The bidID of the next bid from the position the bid must be inserted at.
+    /**
+     * DEPRECATED, NO LONGER NECESSARY FOR TRUEBIT ICO
      */
-    function search(uint _maxValuation, uint _nextStart) view public returns(uint nextInsert) {
+	function search(uint _maxValuation, uint _nextStart) view public returns(uint nextInsert) {
         uint next = _nextStart;
         bool found;
 
@@ -368,11 +346,10 @@ contract IICO {
 
     /* *** Interface Views *** */
 
-    /** @dev Get the current valuation and cut off bid's details.
-     *  This function is O(n), where n is the amount of bids. This could exceed the gas limit, therefore this function should only be used for interface display and not by other contracts.
-     *  @return The current valuation and cut off bid's details.
-     */
-    function valuationAndCutOff() public view returns (uint valuation, uint virtualValuation, uint currentCutOffBidID, uint currentCutOffBidmaxValuation, uint currentCutOffBidContrib) {
+   	/**
+	 * DEPRECATED: NO LONGER USED FOR TRUEBIT
+	 */
+	function valuationAndCutOff() public view returns (uint valuation, uint virtualValuation, uint currentCutOffBidID, uint currentCutOffBidmaxValuation, uint currentCutOffBidContrib) {
         currentCutOffBidID = bids[TAIL].prev;
 
         // Loop over all bids or until cut off bid is found
