@@ -45,6 +45,9 @@ contract IICO {
         address contributor;  // The contributor who placed the bid.
         bool withdrawn;       // True if the bid has been withdrawn.
         bool redeemed;        // True if the ETH or tokens have been redeemed.
+
+		uint minBucketID;
+		uint maxBucketID;
     }
 
     struct BidBucket {
@@ -81,6 +84,7 @@ contract IICO {
 
     /* *** Events *** */
     event BidSubmitted(address indexed contributor, uint indexed bidID, uint indexed time);
+	event Poked(address indexed poker, uint indexed bucketID);
 
     /* *** Modifiers *** */
     modifier onlyOwner{ require(owner == msg.sender); _; }
@@ -149,6 +153,9 @@ contract IICO {
         uint minBucketID = (_personalMin - minValuation) / increment;
         uint maxBucketID = (_maxCap - minValuation) / increment; 
 
+
+		// TODO: decide what min should be so that the bid is always
+		//			in 2 buckets at a time.
         if (buckets[minBucketID].creator == address(0x0)) {
             buckets[minBucketID] = BidBucket({
                 valuation: _personalMin,
@@ -179,7 +186,9 @@ contract IICO {
             bonus: bonus(),
             contributor: msg.sender,
             withdrawn: false,
-            redeemed: false
+            redeemed: false,
+			minBucketID: minBucketID,
+			maxBucketID: maxBucketID
         });
 
         buckets[maxBucketID].maxCapBids.push(lastBidID);
@@ -295,6 +304,10 @@ contract IICO {
             revert();
     }
 
+	function poke(uint _bucketID) public {
+		emit Poked(msg.sender, _bucketID);
+	}
+
     /* *** View Functions *** */
 
     /**
@@ -343,6 +356,50 @@ contract IICO {
         for (uint i = 0; i < contributorBidIDs[_contributor].length; ++i)
             contribution += bids[contributorBidIDs[_contributor][i]].contrib;
     }
+
+
+	/** @dev Get the array of personal min bids from a bucket.
+	  *	This can be used for getting data for visualization.
+      * @param _bucketid The ID of the bucket to get the list from.
+	  * @return minBids The array of personal min bids in the bucket.
+	  */
+	function bucketMinBids(uint _bucketid) public view returns (uint[] memory minBids) {
+		BidBucket storage bucket = buckets[_bucketid];
+		if (bucket.creator == address(0x0)) {
+			return minBids;
+		}
+
+		minBids = new uint[](bucket.personalMinBids.length);
+		uint i = 0;
+
+		for (i = 0; i < bucket.personalMinBids.length; i++) {
+			minBids[i] = bucket.personalMinBids[i];
+		}
+
+		return minBids;
+	}	
+
+
+	/** @dev Get the array of maximum cap bids from a bucket.
+	  *	This can be used for getting data for visualization.
+      * @param _bucketid The ID of the bucket to get the list from.
+	  * @return maxBids The array of maximum cap bids in the bucket.
+	  */
+	function bucketMaxBids(uint _bucketid) public view returns (uint[] memory maxBids) {
+		BidBucket storage bucket = buckets[_bucketid];
+		if (bucket.creator == address(0x0)) {
+			return maxBids;
+		}
+
+		maxBids = new uint[](bucket.maxCapBids.length);
+		uint i = 0;
+
+		for (i = 0; i < bucket.maxCapBids.length; i++) {
+			maxBids[i] = bucket.maxCapBids[i];
+		}
+
+		return maxBids;
+	}	
 
     /* *** Interface Views *** */
 

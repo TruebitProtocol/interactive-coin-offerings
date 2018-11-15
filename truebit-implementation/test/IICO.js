@@ -82,16 +82,21 @@ contract('IICO', function (accounts) {
 		assert.equal(log.args.contributor, buyerA)
 		assert.equal(log.args.bidID, 1)
 
-		let bid = await iico.bids(1)
-
+		let bid = await iico.bids.call(1)
 		assert.equal(bid[2].toNumber(), maxValuation)
 		assert.equal(bid[3], 0)
 		assert.equal(bid[4], 0.1E18)
 		assert.equal(bid[6], buyerA)
 		assert.equal(bid[7], false)
 		assert.equal(bid[8], false)
-
+		// TODO: fix the god damn min bucket valuation
 		// Check the bucket got filled
+		let bucketMinBids = await iico.bucketMinBids(198000)
+		let bucketMaxBids = await iico.bucketMaxBids(198000)
+		assert.equal(bucketMinBids.length, 0)
+		assert.equal(bucketMaxBids.length, 1)
+		assert.equal(bucketMaxBids[0].toNumber(), 1)
+
 	})
 
 	it('Should submit a bit and create a new bucket', async () => {
