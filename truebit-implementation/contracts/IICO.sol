@@ -34,9 +34,6 @@ contract IICO {
     // They are sorted in ascending order by (maxValuation,bidID) where bidID is the ID and key of the bid in the mapping.
     // The list contains two artificial bids HEAD and TAIL having respectively the minimum and maximum bidID and maxValuation.
     struct Bid {
-        /* *** Linked List Members *** */
-        uint prev;            // bidID of the previous element.
-        uint next;            // bidID of the next element.
         /* ***     Bid Members     *** */
         uint maxValuation;    // Maximum valuation in wei beyond which the contributor prefers refund.
         uint personalMin;
@@ -45,9 +42,11 @@ contract IICO {
         address contributor;  // The contributor who placed the bid.
         bool withdrawn;       // True if the bid has been withdrawn.
         bool redeemed;        // True if the ETH or tokens have been redeemed.
+		bool active;		  // True if the bid is active given the current valuation.
 
 		uint minBucketID;
 		uint maxBucketID;
+
     }
 
     struct BidBucket {
@@ -148,15 +147,13 @@ contract IICO {
         // Make sure the two valuations are multiples of the increment
         require(now >= startTime && now < endTime); // Check that the bids are still open.
         require(_maxCap >= minValuation && _maxCap > _personalMin);
-//        require( (_maxCap - minValuation) % increment == 0);
-//        require( (_personalMin - minValuation) % increment == 0);
+        require( (_maxCap - minValuation) % increment == 0);
+        require( (_personalMin - minValuation) % increment == 0);
 
         uint minBucketID = (_personalMin - minValuation) / increment;
         uint maxBucketID = (_maxCap - minValuation) / increment; 
 
 
-		// TODO: decide what min should be so that the bid is always
-		//			in 2 buckets at a time.
         if (buckets[minBucketID].creator == address(0x0)) {
             buckets[minBucketID] = BidBucket({
                 valuation: _personalMin,
@@ -179,8 +176,6 @@ contract IICO {
         ++lastBidID;
 
         bids[lastBidID] = Bid({
-            prev: 0,
-            next: 0,
             maxValuation: _maxCap,
             personalMin: _personalMin,
             contrib: msg.value,
@@ -189,7 +184,8 @@ contract IICO {
             withdrawn: false,
             redeemed: false,
 			minBucketID: minBucketID,
-			maxBucketID: maxBucketID
+			maxBucketID: maxBucketID,
+			active: (currentValuation+msg.value > _maxCap) ? false: true
         });
 
 		/* Update the current valuation and the buckets. */
@@ -236,39 +232,39 @@ contract IICO {
      *  Each call only has a O(1) storage write operations.
      *  @param _maxIt The maximum amount of bids to go through. This value must be set in order to not exceed the gas limit.
      */
-    function finalize(uint _maxIt) public {
-        require(now >= endTime);
-        require(!finalized);
-
-        // Make local copies of the finalization variables in order to avoid modifying storage in order to save gas.
-        uint localCutOffBidID = cutOffBidID;
-        uint localSumAcceptedContrib = sumAcceptedContrib;
-        uint localSumAcceptedVirtualContrib = sumAcceptedVirtualContrib;
-
-        // Search for the cut-off bid while adding the contributions.
-        for (uint it = 0; it < _maxIt && !finalized; ++it) {
-            Bid storage bid = bids[localCutOffBidID];
-            if (bid.contrib+localSumAcceptedContrib < bid.maxValuation) { // We haven't found the cut-off yet.
-                localSumAcceptedContrib        += bid.contrib;
-                localSumAcceptedVirtualContrib += bid.contrib + (bid.contrib * bid.bonus) / BONUS_DIVISOR;
-                localCutOffBidID = bid.prev; // Go to the previous bid.
-            } else { // We found the cut-off. This bid will be taken partially.
-                finalized = true;
-                uint contribCutOff = bid.maxValuation >= localSumAcceptedContrib ? bid.maxValuation - localSumAcceptedContrib : 0; // The amount of the contribution of the cut-off bid that can stay in the sale without spilling over the maxValuation.
-                contribCutOff = contribCutOff < bid.contrib ? contribCutOff : bid.contrib; // The amount that stays in the sale should not be more than the original contribution. This line is not required but it is added as an extra security measure.
-                bid.contributor.send(bid.contrib-contribCutOff); // Send the non-accepted part. Use send in order to not block if the contributor's fallback reverts.
-                bid.contrib = contribCutOff; // Update the contribution value.
-                localSumAcceptedContrib += bid.contrib;
-                localSumAcceptedVirtualContrib += bid.contrib + (bid.contrib * bid.bonus) / BONUS_DIVISOR;
-                beneficiary.send(localSumAcceptedContrib); // Use send in order to not block if the beneficiary's fallback reverts.
-            }
-        }
-
-        // Update storage.
-        cutOffBidID = localCutOffBidID;
-        sumAcceptedContrib = localSumAcceptedContrib;
-        sumAcceptedVirtualContrib = localSumAcceptedVirtualContrib;
-    }
+//    function finalize(uint _maxIt) public {
+//        require(now >= endTime);
+//        require(!finalized);
+//
+//        // Make local copies of the finalization variables in order to avoid modifying storage in order to save gas.
+//        uint localCutOffBidID = cutOffBidID;
+//        uint localSumAcceptedContrib = sumAcceptedContrib;
+//        uint localSumAcceptedVirtualContrib = sumAcceptedVirtualContrib;
+//
+//        // Search for the cut-off bid while adding the contributions.
+//        for (uint it = 0; it < _maxIt && !finalized; ++it) {
+//            Bid storage bid = bids[localCutOffBidID];
+//            if (bid.contrib+localSumAcceptedContrib < bid.maxValuation) { // We haven't found the cut-off yet.
+//                localSumAcceptedContrib        += bid.contrib;
+//                localSumAcceptedVirtualContrib += bid.contrib + (bid.contrib * bid.bonus) / BONUS_DIVISOR;
+//                localCutOffBidID = bid.prev; // Go to the previous bid.
+//            } else { // We found the cut-off. This bid will be taken partially.
+//                finalized = true;
+//                uint contribCutOff = bid.maxValuation >= localSumAcceptedContrib ? bid.maxValuation - localSumAcceptedContrib : 0; // The amount of the contribution of the cut-off bid that can stay in the sale without spilling over the maxValuation.
+//                contribCutOff = contribCutOff < bid.contrib ? contribCutOff : bid.contrib; // The amount that stays in the sale should not be more than the original contribution. This line is not required but it is added as an extra security measure.
+//                bid.contributor.send(bid.contrib-contribCutOff); // Send the non-accepted part. Use send in order to not block if the contributor's fallback reverts.
+//                bid.contrib = contribCutOff; // Update the contribution value.
+//                localSumAcceptedContrib += bid.contrib;
+//                localSumAcceptedVirtualContrib += bid.contrib + (bid.contrib * bid.bonus) / BONUS_DIVISOR;
+//                beneficiary.send(localSumAcceptedContrib); // Use send in order to not block if the beneficiary's fallback reverts.
+//            }
+//        }
+//
+//        // Update storage.
+//        cutOffBidID = localCutOffBidID;
+//        sumAcceptedContrib = localSumAcceptedContrib;
+//        sumAcceptedVirtualContrib = localSumAcceptedVirtualContrib;
+//    }
 
     /** @dev Redeem a bid. If the bid is accepted, send the tokens, otherwise refund the ETH.
      *  Note that anyone can call this function, not only the party which made the bid.

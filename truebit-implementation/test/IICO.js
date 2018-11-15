@@ -84,14 +84,15 @@ contract('IICO', function (accounts) {
 		assert.equal(log.args.bidID, 1)
 
 		let bid = await iico.bids.call(1)
-		assert.equal(bid[2].toNumber(), maxValuation)
-		assert.equal(bid[3], 0)
-		assert.equal(bid[4], 0.1E18)
-		assert.equal(bid[6], buyerA)
-		assert.equal(bid[7], false)
-		assert.equal(bid[8], false)
-		assert.equal(bid[9].toNumber(), 0)
-		assert.equal(bid[10].toNumber(), numBuckets-1)
+		assert.equal(bid[0].toNumber(), maxValuation)
+		assert.equal(bid[1], 0)
+		assert.equal(bid[2], 0.1E18)
+		assert.equal(bid[4], buyerA)
+		assert.equal(bid[5], false)
+		assert.equal(bid[6], false)
+		assert.equal(bid[7], true)
+		assert.equal(bid[8].toNumber(), 0)
+		assert.equal(bid[9].toNumber(), numBuckets-1)
 		// TODO: fix the god damn min bucket valuation
 		// Check the bucket got filled
 		let bucketMinBids = await iico.bucketMinBids(0)
