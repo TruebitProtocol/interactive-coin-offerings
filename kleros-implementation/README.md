@@ -1,6 +1,20 @@
 # Interactive Coin Offering
+Below is the README.md provided by Kleros for their interactive coin offering repo.
+I will outline the changes that we made and describe the Truebit ICO protocol.
+
+Implementation details and modifications compared to the paper:
+- The implementation follows the interactive coin offering paper more closely by enabling both a maximum cap and personal minimum in a bid.
+- A fixed amount of tokens is sold.
+- Bids are placed in buckets that define the valuation that the bid specifies as its maximum cap or personal minimum.
+- The buckets are at pre-defined intervals such that maximum caps and personal minimums can not be arbitrary but must fit into one bucket
+- A bid specifies a personal minimum and a maximum cap, therefore, the bid will exist in two buckets. The first bucket it exists in will be according to the personal minimum. The second one will be based on the maximum cap. If a bid has personal min of X and maximum cap of Y, then buckets representing valuations X and Y will contain the bid.
+- The buckets are not all created at deployment. Only the default maximum and minimum valuation buckets are created. When a bid is sent which belongs in a bucket that does not exist, the contract records the creator of the bucket and allows them to delete the storage and claim a refund once the sale is over.
+- When a bid becomes active (valuation increases above the personal minimum of a bid) any user can poke the bucket and mark the bids as active for a reward. (**TODO**: the reward amount and funding it needs to be discussed).
+- When a bid becomes inacgive (valuation increases above the maximum cap of a bid) any user can also poke the bid into the sale.
+- **TODO**: Poke functionality is yet to be implemented as it is unclear whether it is in fact feasible in a smart contract (some claims are that an np-hard problem can be reduced to it).
 
 
+# Kleros Interactive Coin Offering README.md
 This contract implements the Interactive Coin Offering token sale as described in this paper:
 https://people.cs.uchicago.edu/~teutsch/papers/ico.pdf
 
