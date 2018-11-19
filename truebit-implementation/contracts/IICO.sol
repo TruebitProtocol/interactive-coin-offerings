@@ -60,7 +60,6 @@ contract IICO {
     mapping (uint => BidBucket) public buckets; // Map bucketID to bucket.
     mapping (address => uint[]) public contributorBidIDs; // Map contributor to a list of its bid ID.
     uint public lastBidID = 0; // The last bidID not accounting TAIL.
-	uint public currentValuation = 0;
 
     /* *** Sale parameters *** */
     uint public startTime;                      // When the sale starts.
@@ -153,7 +152,6 @@ contract IICO {
         uint minBucketID = (_personalMin - minValuation) / increment;
         uint maxBucketID = (_maxCap - minValuation) / increment; 
 
-
         if (buckets[minBucketID].creator == address(0x0)) {
             buckets[minBucketID] = BidBucket({
                 valuation: _personalMin,
@@ -162,7 +160,6 @@ contract IICO {
                 creator: msg.sender
             });
         }
-
         if (buckets[maxBucketID].creator == address(0x0)) {
             buckets[maxBucketID] = BidBucket({
                 valuation: _maxCap,
@@ -185,18 +182,17 @@ contract IICO {
             redeemed: false,
 			minBucketID: minBucketID,
 			maxBucketID: maxBucketID,
-			active: (currentValuation+msg.value > _maxCap || currentValuation+msg.value < _personalMin) ? false: true
+			active: (sumAcceptedContrib+msg.value > _maxCap || sumAcceptedContrib+msg.value < _personalMin) ? false: true
         });
-
+		Bid storage bid = bids[lastBidID];
 		/* Update the current valuation and the buckets. */
 		/* At this point someone may be able to poke a bucket which has inactive bids */
-		currentValuation = currentValuation + msg.value;
+		sumAcceptedContrib += bid.contrib;
+		sumAcceptedVirtualContrib += bid.contrib + (bid.contrib * bid.bonus) / BONUS_DIVISOR;
         buckets[maxBucketID].maxCapBids.push(lastBidID);
         buckets[minBucketID].personalMinBids.push(lastBidID); 
-
         contributorBidIDs[msg.sender].push(lastBidID);
         emit BidSubmitted(msg.sender, lastBidID, now); 
-
     }
 	
 
@@ -212,7 +208,7 @@ contract IICO {
         require(!bid.withdrawn);
 
         bid.withdrawn = true;
-
+		bid.active = false;
         // Before endFullBonusTime, everything is refunded. Otherwise, an amount decreasing linearly from endFullBonusTime to withdrawalLockTime is refunded.
         uint refund = (now < endFullBonusTime) ? bid.contrib : (bid.contrib * (withdrawalLockTime - now)) / (withdrawalLockTime - endFullBonusTime);
         assert(refund <= bid.contrib); // Make sure that we don't refund more than the contribution. Would a bug arise, we prefer blocking withdrawal than letting someone steal money.
@@ -220,7 +216,8 @@ contract IICO {
         bid.bonus = (bid.bonus * 2) / 3; // Reduce the bonus by 1/3.
 
 		/* Only subtract the refund. */
-		currentValuation -= refund; 
+		sumAcceptedContrib -= refund;
+		sumAcceptedVirtualContrib -= (bid.bonus * (bid.contrib + 3*refund)) / (2 * BONUS_DIVISOR) + refund;
 
         msg.sender.transfer(refund);
     }

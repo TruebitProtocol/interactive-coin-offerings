@@ -110,16 +110,16 @@ contract('IICO', function (accounts) {
     let token = await MintableToken.new({from: owner})
     increaseTime(1010)
  
- 	await iico.submitBid(web3.toWei(1, 'ether'), 0, {from: buyerA, value:web3.toWei(10, 'ether')})
+	  await iico.submitBid(web3.toWei(1, 'ether'), 0, {from: buyerA, value:web3.toWei(2, 'ether')})
 
-	let bid = await iico.bids.call(1)
-	assert.equal(bid[7], false)
+	  let bid = await iico.bids.call(1)
+	  assert.equal(bid[7], false)
 
-	await iico.submitBid(web3.toWei(100, 'ether'), web3.toWei(50, 'ether'), {from: buyerB, value: web3.toWei(1, 'ether')})
+	  await iico.submitBid(web3.toWei(100, 'ether'), web3.toWei(50, 'ether'), {from: buyerB, value: web3.toWei(1, 'ether')})
 
-	bid = await iico.bids.call(2)
-	assert.equal(bid[4], buyerB)
-	assert.equal(bid[7], false)
+	  bid = await iico.bids.call(2)
+	  assert.equal(bid[4], buyerB)
+	  assert.equal(bid[7], false)
 
   })
 
@@ -127,9 +127,34 @@ contract('IICO', function (accounts) {
     let startTestTime = web3.eth.getBlock('latest').timestamp
     let iico = await IICO.new(startTestTime+timeBeforeStart,fullBonusLength,partialWithdrawalLength, withdrawalLockUpLength,maxBonus,beneficiary, minValuation, maxValuation, increment, {from: owner})
     let token = await MintableToken.new({from: owner})
-    
+   
+	  increaseTime(1010)
+
+	  await iico.submitBid(web3.toWei(1, 'ether'), 0, {from: buyerA, value:web3.toWei(2, 'ether')})
+	  
+	  let bid = await iico.bids(1)
+	  assert.equal(bid[8].toNumber(), 0)
+	  assert.equal(bid[9].toNumber(), 2)
+	  assert.equal(bid[7].false)
+	  
+	  let bucket = await iico.buckets(0)
+	  assert.equal(bucket[1], owner)
+	  
+	  bucket = await iico.buckets(2)
+	  assert.equal(bucket[1], buyerA)
+
   })
 
+  it('Withdraw should update the valuation correctly with bonus and drop-off', async () => {
+    let startTestTime = web3.eth.getBlock('latest').timestamp
+    let iico = await IICO.new(startTestTime+timeBeforeStart,fullBonusLength,partialWithdrawalLength, withdrawalLockUpLength,maxBonus,beneficiary, minValuation, maxValuation, increment, {from: owner})
+    let token = await MintableToken.new({from: owner})
+
+	  increaseTime(1010)
+
+    throw "Test not implemented." 
+  })
+	
 })
 
 
