@@ -83,7 +83,7 @@ contract IICO {
 
     /* *** Events *** */
     event BidSubmitted(address indexed contributor, uint indexed bidID, uint indexed time);
-	event Poked(address indexed poker, uint indexed bucketID);
+	event Poked(address indexed poker, uint indexed bidID);
 
     /* *** Modifiers *** */
     modifier onlyOwner{ require(owner == msg.sender); _; }
@@ -172,6 +172,8 @@ contract IICO {
         BidBucket storage bucket = buckets[maxBucketID];
         ++lastBidID;
 
+		// Create the bid and mark it inactive if the valuation is not within
+		// its bounds.
         bids[lastBidID] = Bid({
             maxValuation: _maxCap,
             personalMin: _personalMin,
@@ -184,11 +186,14 @@ contract IICO {
 			maxBucketID: maxBucketID,
 			active: (sumAcceptedContrib+msg.value > _maxCap || sumAcceptedContrib+msg.value < _personalMin) ? false: true
         });
+
 		Bid storage bid = bids[lastBidID];
-		/* Update the current valuation and the buckets. */
-		/* At this point someone may be able to poke a bucket which has inactive bids */
+		
+		// Update the contribution amount with the bonus
 		sumAcceptedContrib += bid.contrib;
 		sumAcceptedVirtualContrib += bid.contrib + (bid.contrib * bid.bonus) / BONUS_DIVISOR;
+
+		// Place the bids in the two buckets
         buckets[maxBucketID].maxCapBids.push(lastBidID);
         buckets[minBucketID].personalMinBids.push(lastBidID); 
         contributorBidIDs[msg.sender].push(lastBidID);
@@ -297,8 +302,32 @@ contract IICO {
             revert();
     }
 
-	function poke(uint _bucketID) public {
-		emit Poked(msg.sender, _bucketID);
+	/** @dev Poke a bid. Checks if the bid should be make active or inactive.
+	  * @param _bidID ID of the bid to poke.
+      */
+	function poke(uint _bidID) public {
+		Bid storage bid = bids[_bidID];
+
+		require(bid.contributor != address(0x0));	
+
+		// Can be shorter code, but don't want to reset a storage location if we 
+		// don't need to and save gas.	
+		if (bid.active) {
+			if (sumAcceptedContrib > bid.maxValuation || sumAcceptedContrib < bid.personalMin) {
+				bid.active = false;
+				sumAcceptedContrib -= bid.contrib;
+				sumAcceptedVirtualContrib -= bid.contrib + (bid.contrib * bid.bonus) / BONUS_DIVISOR;
+				emit Poked(msg.sender, _bidID);
+			}
+		} else {
+			if (sumAcceptedContrib <= bid.maxValuation && sumAcceptedContrib >= bid.personalMin) {
+				bid.active = true;
+				sumAcceptedContrib += bid.contrib;
+				sumAcceptedVirtualContrib += bid.contrib + (bid.contrib * bid.bonus) / BONUS_DIVISOR;
+				emit Poked(msg.sender, _bidID);
+			}
+		}
+
 	}
 
     /* *** View Functions *** */
