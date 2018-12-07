@@ -309,32 +309,38 @@ contract IICO {
     }
 
 	/** @dev Poke a bid. Checks if the bid should be make active or inactive.
-	  * @param _bidID ID of the bid to poke.
+	  * @param _bids ID of the bid to poke.
       */
-	function poke(uint _bidID) public {
-		Bid storage bid = bids[_bidID];
+	function poke(uint[] _bids) public {
+		uint localSumContrib = sumAcceptedContrib;
+		uint localVSumContrib = sumAcceptedVirtualContrib;
+		uint256 i = 0;
+		Bid storage bid = bids[0];
 
-		require(bid.contributor != address(0x0));	
-
-		// Can be shorter code, but don't want to reset a storage location if we 
-		// don't need to and save gas.	
-		if (bid.active) {
-			if (sumAcceptedContrib > bid.maxValuation || sumAcceptedContrib < bid.personalMin) {
-				bid.active = false;
-				sumAcceptedContrib -= bid.contrib;
-				sumAcceptedVirtualContrib -= bid.contrib + (bid.contrib * bid.bonus) / BONUS_DIVISOR;
-				emit Poked(msg.sender, _bidID);
-			}
-		} else {
-			if (sumAcceptedContrib <= bid.maxValuation && sumAcceptedContrib >= bid.personalMin) {
-				bid.active = true;
-				sumAcceptedContrib += bid.contrib;
-				sumAcceptedVirtualContrib += bid.contrib + (bid.contrib * bid.bonus) / BONUS_DIVISOR;
-				emit Poked(msg.sender, _bidID);
+		for (i = 0; i < _bids.length; i++) {
+			bid = bids[_bids[i]];						
+			if (bid.active) {
+				localSumContrib -= bid.contrib;
+			} else {
+				localSumContrib += bid.contrib;
 			}
 		}
 
+		for (i = 0; i < _bids.length; i++) {
+			bid = bids[_bids[i]];
+			if (bid.active) {
+				require(localSumContrib > bid.maxValuation || localSumContrib < bid.personalMin);
+			} else {
+				require(localSumContrib <= bid.maxValuation && localSumContrib >= bid.personalMin);
+			}
+		}
 
+		for (i = 0; i < _bids.length; i++) {
+			bid = bids[_bids[i]];
+			bid.active = !bid.active;
+		}
+
+		sumAcceptedContrib = localSumContrib;
 	}
 
     /* *** View Functions *** */
