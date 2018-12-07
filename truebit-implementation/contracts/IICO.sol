@@ -232,7 +232,6 @@ contract IICO {
      *  Since the amount of bids is not bounded, this function may have to be called multiple times.
      *  The function is O(min(n,_maxIt)) where n is the amount of bids. In total it will perform O(n) computations, possibly in multiple calls.
      *  Each call only has a O(1) storage write operations.
-     *  @param _maxIt The maximum amount of bids to go through. This value must be set in order to not exceed the gas limit.
      */
 //    function finalize(uint _maxIt) public {
 //        require(now >= endTime);
@@ -268,6 +267,13 @@ contract IICO {
 //        sumAcceptedVirtualContrib = localSumAcceptedVirtualContrib;
 //    }
 
+	function finalize() public {
+		require(now >= endTime);
+		require(!finalized);
+
+		finalized = true;
+		beneficiary.send(sumAcceptedContrib);
+	}
     /** @dev Redeem a bid. If the bid is accepted, send the tokens, otherwise refund the ETH.
      *  Note that anyone can call this function, not only the party which made the bid.
      *  @param _bidID ID of the bid to withdraw.
@@ -327,6 +333,7 @@ contract IICO {
 				emit Poked(msg.sender, _bidID);
 			}
 		}
+
 
 	}
 

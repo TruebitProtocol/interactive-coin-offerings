@@ -1,5 +1,5 @@
 
-const { waitForMined, expectThrow, increaseTime } = require('kleros-interaction/helpers/utils')
+const { waitForMined, expectThrow, increaseTime, mineBlock } = require('kleros-interaction/helpers/utils')
 const MintableToken = artifacts.require('openzeppelin-solidity/contracts/token/ERC20/ERC20Mintable.sol')
 const IICO = artifacts.require('IICO.sol')
 
@@ -200,18 +200,54 @@ contract('IICO', function (accounts) {
 
   })
 
-
-
-  it('Withdraw should update the valuation correctly with bonus and drop-off', async () => {
+  it('Withdraw full amount before full bonus refund deadline', async () => {
     let startTestTime = web3.eth.getBlock('latest').timestamp
     let iico = await IICO.new(startTestTime+timeBeforeStart,fullBonusLength,partialWithdrawalLength, withdrawalLockUpLength,maxBonus,beneficiary, minValuation, maxValuation, increment, {from: owner})
     let token = await MintableToken.new({from: owner})
 
 		increaseTime(1010)
     
+   	await iico.submitBid(maxValuation, 0, {from: buyerB, value: web3.toWei(1, 'ether')})
+	  let bid = await iico.bids.call(1)
+	  assert.equal(bid[7], true)
+    
+    await iico.submitBid(maxValuation, 0, {from: buyerA, value: web3.toWei(5, 'ether')})
+    bid = await iico.bids.call(2)
+    assert.equal(bid[7], true)
 
+    increaseTime(1000)
+    await iico.withdraw(1, {from: buyerB})
+    bid = await iico.bids.call(1)
+    assert.equal(bid[5], true)
 
-    throw "Test not implemented." 
+    let valuation = await iico.sumAcceptedContrib()
+    assert.equal(valuation.toNumber(10), web3.toWei(5, 'ether'))
+
+  })
+  
+  it('Withdraw partial bid', async () => {
+    let startTestTime = web3.eth.getBlock('latest').timestamp
+    let iico = await IICO.new(startTestTime+timeBeforeStart,fullBonusLength,partialWithdrawalLength, withdrawalLockUpLength,maxBonus,beneficiary, minValuation, maxValuation, increment, {from: owner})
+    let token = await MintableToken.new({from: owner})
+
+		increaseTime(1010)
+    
+   	await iico.submitBid(maxValuation, 0, {from: buyerB, value: web3.toWei(1, 'ether')})
+	  let bid = await iico.bids.call(1)
+	  assert.equal(bid[7], true)
+    
+    await iico.submitBid(maxValuation, 0, {from: buyerA, value: web3.toWei(5, 'ether')})
+    bid = await iico.bids.call(2)
+    assert.equal(bid[7], true)
+
+    increaseTime(5000)
+    await iico.withdraw(1, {from: buyerB})
+    bid = await iico.bids.call(1)
+    assert.equal(bid[5], true)
+
+    let valuation = await iico.sumAcceptedContrib()
+    assert.equal(valuation.toNumber(10), web3.toWei(5, 'ether'))
+
   })
 })
 
