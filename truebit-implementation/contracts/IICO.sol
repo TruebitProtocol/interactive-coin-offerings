@@ -46,6 +46,7 @@ contract IICO {
 
 		uint minBucketID;
 		uint maxBucketID;
+		uint creationBlock;
 
     }
 
@@ -184,7 +185,8 @@ contract IICO {
             redeemed: false,
 			minBucketID: minBucketID,
 			maxBucketID: maxBucketID,
-			active: (sumAcceptedContrib+msg.value > _maxCap || sumAcceptedContrib+msg.value < _personalMin) ? false: true
+			active: (sumAcceptedContrib+msg.value > _maxCap || sumAcceptedContrib+msg.value < _personalMin) ? false: true,
+			creationBlock: block.number
         });
 
 		Bid storage bid = bids[lastBidID];
