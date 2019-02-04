@@ -145,60 +145,78 @@ contract('IICO', function (accounts) {
 		assert.equal(bucket[1], buyerA)
 
   })
+
+
+  it('Should get all the bid uints.', async () => {
+    let startTestTime = web3.eth.getBlock('latest').timestamp
+    let iico = await IICO.new(startTestTime+timeBeforeStart,fullBonusLength,partialWithdrawalLength, withdrawalLockUpLength,maxBonus,beneficiary, minValuation, maxValuation, increment, {from: owner})
+    let token = await MintableToken.new({from: owner})
+   
+		increaseTime(1010)
   
-  it ('Inactive bid should be poked in', async () => {
-    let startTestTime = web3.eth.getBlock('latest').timestamp
-    let iico = await IICO.new(startTestTime+timeBeforeStart,fullBonusLength,partialWithdrawalLength, withdrawalLockUpLength,maxBonus,beneficiary, minValuation, maxValuation, increment, {from: owner})
-    let token = await MintableToken.new({from: owner})
-	
-    increaseTime(1010)	
+    for (let i = 0; i < 100; i++) {
+		  await iico.submitBid(web3.toWei(1000, 'ether'), 0, {from: buyerA, value:1000000})
+    }
 
-    // inactive bid
-    await iico.submitBid(web3.toWei(5, 'ether'), web3.toWei(3, 'ether'), {from: buyerA, value:web3.toWei(2, 'ether')})
-    
-    let bid = await iico.bids.call(1)
-    assert.equal(bid[7], false)
-   
-   	await iico.submitBid(maxValuation, 0, {from: buyerB, value: web3.toWei(1, 'ether')})
-	  bid = await iico.bids.call(2)
-	  assert.equal(bid[7], true)
-
-	  tx = await iico.poke(1, {from: buyerC})
-    log = tx.logs.find(log => log.event === 'Poked')
-    assert.equal(log.args.poker, buyerC)
-    assert.equal(log.args.bidID, 1)
-
-	  bid = await iico.bids.call(1)
-	  assert.equal(bid[7], true)
+    let result = await iico.bidBufferUint.call()  
+    console.log(result)
 
   })
 
-  it ('Active bid should be poked out', async () => {
-    let startTestTime = web3.eth.getBlock('latest').timestamp
-    let iico = await IICO.new(startTestTime+timeBeforeStart,fullBonusLength,partialWithdrawalLength, withdrawalLockUpLength,maxBonus,beneficiary, minValuation, maxValuation, increment, {from: owner})
-    let token = await MintableToken.new({from: owner})
-	
-    increaseTime(1010)	
 
-    // active bid
-    await iico.submitBid(web3.toWei(5, 'ether'), web3.toWei(3, 'ether'), {from: buyerA, value:web3.toWei(5, 'ether')})
-    
-    let bid = await iico.bids.call(1)
-    assert.equal(bid[7], true)
-   
-   	await iico.submitBid(maxValuation, 0, {from: buyerB, value: web3.toWei(1, 'ether')})
-	  bid = await iico.bids.call(2)
-	  assert.equal(bid[7], true)
+//  it ('Inactive bid should be poked in', async () => {
+//    let startTestTime = web3.eth.getBlock('latest').timestamp
+//    let iico = await IICO.new(startTestTime+timeBeforeStart,fullBonusLength,partialWithdrawalLength, withdrawalLockUpLength,maxBonus,beneficiary, minValuation, maxValuation, increment, {from: owner})
+//    let token = await MintableToken.new({from: owner})
+//	
+//    increaseTime(1010)	
+//
+//    // inactive bid
+//    await iico.submitBid(web3.toWei(5, 'ether'), web3.toWei(3, 'ether'), {from: buyerA, value:web3.toWei(2, 'ether')})
+//    
+//    let bid = await iico.bids.call(1)
+//    assert.equal(bid[7], false)
+//   
+//   	await iico.submitBid(maxValuation, 0, {from: buyerB, value: web3.toWei(1, 'ether')})
+//	  bid = await iico.bids.call(2)
+//	  assert.equal(bid[7], true)
+//
+//	  tx = await iico.poke(1, {from: buyerC})
+//    log = tx.logs.find(log => log.event === 'Poked')
+//    assert.equal(log.args.poker, buyerC)
+//    assert.equal(log.args.bidID, 1)
+//
+//	  bid = await iico.bids.call(1)
+//	  assert.equal(bid[7], true)
+//
+//  })
 
-	  tx = await iico.poke(1, {from: buyerC})
-    log = tx.logs.find(log => log.event === 'Poked')
-    assert.equal(log.args.poker, buyerC)
-    assert.equal(log.args.bidID, 1)
-
-	  bid = await iico.bids.call(1)
-	  assert.equal(bid[7], false)
-
-  })
+//  it ('Active bid should be poked out', async () => {
+//    let startTestTime = web3.eth.getBlock('latest').timestamp
+//    let iico = await IICO.new(startTestTime+timeBeforeStart,fullBonusLength,partialWithdrawalLength, withdrawalLockUpLength,maxBonus,beneficiary, minValuation, maxValuation, increment, {from: owner})
+//    let token = await MintableToken.new({from: owner})
+//	
+//    increaseTime(1010)	
+//
+//    // active bid
+//    await iico.submitBid(web3.toWei(5, 'ether'), web3.toWei(3, 'ether'), {from: buyerA, value:web3.toWei(5, 'ether')})
+//    
+//    let bid = await iico.bids.call(1)
+//    assert.equal(bid[7], true)
+//   
+//   	await iico.submitBid(maxValuation, 0, {from: buyerB, value: web3.toWei(1, 'ether')})
+//	  bid = await iico.bids.call(2)
+//	  assert.equal(bid[7], true)
+//
+//	  tx = await iico.poke(1, {from: buyerC})
+//    log = tx.logs.find(log => log.event === 'Poked')
+//    assert.equal(log.args.poker, buyerC)
+//    assert.equal(log.args.bidID, 1)
+//
+//	  bid = await iico.bids.call(1)
+//	  assert.equal(bid[7], false)
+//
+//  })
 
   it('Withdraw full amount before full bonus refund deadline', async () => {
     let startTestTime = web3.eth.getBlock('latest').timestamp
@@ -225,28 +243,50 @@ contract('IICO', function (accounts) {
 
   })
   
-  it('Withdraw partial bid', async () => {
+//  it('Withdraw partial bid', async () => {
+//    let startTestTime = web3.eth.getBlock('latest').timestamp
+//    let iico = await IICO.new(startTestTime+timeBeforeStart,fullBonusLength,partialWithdrawalLength, withdrawalLockUpLength,maxBonus,beneficiary, minValuation, maxValuation, increment, {from: owner})
+//    let token = await MintableToken.new({from: owner})
+//
+//		increaseTime(1010)
+//    
+//   	await iico.submitBid(maxValuation, 0, {from: buyerB, value: web3.toWei(1, 'ether')})
+//	  let bid = await iico.bids.call(1)
+//	  assert.equal(bid[7], true)
+//    
+//    await iico.submitBid(maxValuation, 0, {from: buyerA, value: web3.toWei(5, 'ether')})
+//    bid = await iico.bids.call(2)
+//    assert.equal(bid[7], true)
+//
+//    increaseTime(5000)
+//    await iico.withdraw(1, {from: buyerB})
+//    bid = await iico.bids.call(1)
+//    assert.equal(bid[5], true)
+//
+//    let valuation = await iico.sumAcceptedContrib()
+//    assert.equal(valuation.toNumber(10), web3.toWei(5, 'ether'))
+//
+//  })
+
+  it('Should get all the bid uints.', async () => {
     let startTestTime = web3.eth.getBlock('latest').timestamp
     let iico = await IICO.new(startTestTime+timeBeforeStart,fullBonusLength,partialWithdrawalLength, withdrawalLockUpLength,maxBonus,beneficiary, minValuation, maxValuation, increment, {from: owner})
     let token = await MintableToken.new({from: owner})
-
+   
 		increaseTime(1010)
-    
-   	await iico.submitBid(maxValuation, 0, {from: buyerB, value: web3.toWei(1, 'ether')})
-	  let bid = await iico.bids.call(1)
-	  assert.equal(bid[7], true)
-    
-    await iico.submitBid(maxValuation, 0, {from: buyerA, value: web3.toWei(5, 'ether')})
-    bid = await iico.bids.call(2)
-    assert.equal(bid[7], true)
+  
+    let startNumber = web3.eth.blockNumber
 
-    increaseTime(5000)
-    await iico.withdraw(1, {from: buyerB})
-    bid = await iico.bids.call(1)
-    assert.equal(bid[5], true)
+    for (let i = 0; i < 1000; i++) {
+		  let t = await iico.submitBid(web3.toWei(10000, 'ether'), 0, {from: buyerA, value:1})
+    }
 
-    let valuation = await iico.sumAcceptedContrib()
-    assert.equal(valuation.toNumber(10), web3.toWei(5, 'ether'))
+    assert.equal(startNumber+1001, await web3.eth.blockNumber)
+    let expectedNumber = startNumber + 1000
+    
+
+    let result = await iico.bidBufferUint.call()  
+    console.log(result)
 
   })
 })
