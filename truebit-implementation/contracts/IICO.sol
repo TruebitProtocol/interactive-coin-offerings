@@ -75,6 +75,7 @@ contract IICO {
     uint public increment;
     uint public numBuckets;
     uint constant BONUS_DIVISOR = 1E9;          // The quantity we need to divide by to normalize the bonus.
+	uint constant pokeReward = 200;
 
     /* *** Finalization variables *** */
     bool public finalized;                 // True when the cutting bid has been found. The following variables are final only after finalized==true.
@@ -175,6 +176,7 @@ contract IICO {
 
 		// Create the bid and mark it inactive if the valuation is not within
 		// its bounds.
+		// TODO : CRITICAL THAT WE SUBTRACT THE POKE REWARD FROM THE AMOUNT SENT WITH THE TRANSACTION
         bids[lastBidID] = Bid({
             maxValuation: _maxCap,
             personalMin: _personalMin,
@@ -201,7 +203,48 @@ contract IICO {
         contributorBidIDs[msg.sender].push(lastBidID);
         emit BidSubmitted(msg.sender, lastBidID, now); 
     }
-	
+
+
+//	function bidBuffer() public constant
+//		returns (uint[], uint[], uint[], uint[], address[],
+//				 bool[], bool[], bool[], uint[])
+//	{
+//		uint[] memory _maxval = new uint[](lastBidID);
+//		uint[] memory _pmin = new uint[](lastBidID);
+//		uint[] memory _contrib = new uint[](lastBidID);
+//		uint[] memory _bonus = new uint[](lastBidID);
+//		address[] memory _addr = new address[](lastBidID);
+//		bool[] memory _with = new bool[](lastBidID);
+//		bool[] memory _red = new bool[](lastBidID);
+//		bool[] memory _active = new bool[](lastBidID);
+//		uint[] memory _block = new uint[](lastBidID);
+//
+//		return (_maxval, _pmin, _contrib, _bonus, _addr, _with, _red, _active, _block);
+//	
+//	}
+
+	function bidBufferUint() public constant
+		returns (uint[], uint[], uint[], uint[], uint[])
+	{
+		uint[] memory _maxval = new uint[](lastBidID);
+		uint[] memory _pmin = new uint[](lastBidID);
+		uint[] memory _contrib = new uint[](lastBidID);
+		uint[] memory _bonus = new uint[](lastBidID);
+		uint[] memory _block = new uint[](lastBidID);
+		uint i = 0;
+		
+		for (i = 0; i < lastBidID; i++) {
+			Bid storage _bid = bids[i];
+			_maxval[i] = _bid.maxValuation;
+			_pmin[i] = _bid.personalMin;
+			_contrib[i] = _bid.contrib;
+			_bonus[i] = _bid.bonus;
+			_block[i] = _bid.creationBlock;
+		}	
+
+		return (_maxval, _pmin, _contrib, _bonus, _block);
+	}
+		
 
     /** @dev Withdraw a bid. Can only be called before the end of the withdrawal lock period.
      *  Withdrawing a bid reduces its bonus by 1/3.
@@ -345,6 +388,19 @@ contract IICO {
 		sumAcceptedContrib = localSumContrib;
 	}
 
+//	funtion pokeOut(uint[] _bids) public {
+//		uint localSumContrib = sumAcceptedContrib;
+//		uint localVSumContrib = sumAcceptedVirtualContrib;
+//		uint i = 0;
+//		Bid storage bid = bids[0];
+//
+//		for (i = 0; i < _bids.length; i++) {
+//			bid = bids[_bids[i]];
+//			if (bid.active) {
+//					if (
+//		}	
+	
+
     /* *** View Functions *** */
 
     /** @dev Return the current bonus. The bonus only changes in 1/BONUS_DIVISOR increments.
@@ -395,8 +451,6 @@ contract IICO {
 
 
 	/** @dev Get the array of maximum cap bids from a bucket.
-	  *	This can be used for getting data for visualization.
-      * @param _bucketid The ID of the bucket to get the list from.
 	  * @return maxBids The array of maximum cap bids in the bucket.
 	  */
 	function bucketMaxBids(uint _bucketid) public view returns (uint[] memory maxBids) {
