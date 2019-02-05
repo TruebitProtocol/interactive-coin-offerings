@@ -75,7 +75,7 @@ contract IICO {
     uint public increment;
     uint public numBuckets;
     uint constant BONUS_DIVISOR = 1E9;          // The quantity we need to divide by to normalize the bonus.
-	uint constant pokeReward = 200;
+	uint public constant pokeReward = 200;
 
     /* *** Finalization variables *** */
     bool public finalized;                 // True when the cutting bid has been found. The following variables are final only after finalized==true.
