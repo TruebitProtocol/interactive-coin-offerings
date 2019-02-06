@@ -85,7 +85,8 @@ contract IICO {
 
     /* *** Events *** */
     event BidSubmitted(address indexed contributor, uint indexed bidID, uint indexed time);
-	event Poked(address indexed poker, uint indexed bidID);
+	event PokeIn(address indexed poker, uint indexed bidID);
+	event PokeOut(address indexed poker, uint indexed bidID);
 
     /* *** Modifiers *** */
     modifier onlyOwner{ require(owner == msg.sender); _; }
@@ -353,40 +354,81 @@ contract IICO {
             revert();
     }
 
-	/** @dev Poke a bid. Checks if the bid should be make active or inactive.
-	  * @param _bids ID of the bid to poke.
-      */
-	function poke(uint[] _bids) public {
+	function pokeOut(uint[] _bids) public {
 		uint localSumContrib = sumAcceptedContrib;
 		uint localVSumContrib = sumAcceptedVirtualContrib;
 		uint256 i = 0;
-		Bid storage bid = bids[0];
-
-		for (i = 0; i < _bids.length; i++) {
-			bid = bids[_bids[i]];						
-			if (bid.active) {
-				localSumContrib -= bid.contrib;
-			} else {
-				localSumContrib += bid.contrib;
-			}
-		}
+		Bid storage bid = bids[0];		// TEST THIS LINE
 
 		for (i = 0; i < _bids.length; i++) {
 			bid = bids[_bids[i]];
 			if (bid.active) {
-				require(localSumContrib > bid.maxValuation || localSumContrib < bid.personalMin);
-			} else {
-				require(localSumContrib <= bid.maxValuation && localSumContrib >= bid.personalMin);
+				if (localSumContrib > bid.maxValuation) {
+					bid.active = false;
+					localSumContrib -= bid.contrib;
+					emit PokeOut(msg.sender, _bids[i]);
+				}
 			}
-		}
-
-		for (i = 0; i < _bids.length; i++) {
-			bid = bids[_bids[i]];
-			bid.active = !bid.active;
 		}
 
 		sumAcceptedContrib = localSumContrib;
 	}
+
+	function pokeIn(uint[] _bids) public {
+		uint localSumContrib = sumAcceptedContrib;
+		uint localVSumContrib = sumAcceptedVirtualContrib;
+		uint256 i = 0;
+		Bid storage bid = bids[0];		// TEST THIS LINE
+
+		for (i = 0; i < _bids.length; i++) {
+			bid = bids[_bids[i]];
+			if (bid.active) {
+				if (localSumContrib >= bid.personalMin) {
+					bid.active = true;
+					localSumContrib += bid.contrib;
+					emit PokeIn(msg.sender, _bids[i]);
+				}
+			}
+		}
+
+		sumAcceptedContrib = localSumContrib;
+	}
+
+
+	/** @dev Poke a bid. Checks if the bid should be make active or inactive.
+	  * @param _bids ID of the bid to poke.
+      */
+	//function poke(uint[] _bids) public {
+	//	uint localSumContrib = sumAcceptedContrib;
+	//	uint localVSumContrib = sumAcceptedVirtualContrib;
+	//	uint256 i = 0;
+	//	Bid storage bid = bids[0];
+
+	//	for (i = 0; i < _bids.length; i++) {
+	//		bid = bids[_bids[i]];						
+	//		if (bid.active) {
+	//			localSumContrib -= bid.contrib;
+	//		} else {
+	//			localSumContrib += bid.contrib;
+	//		}
+	//	}
+
+	//	for (i = 0; i < _bids.length; i++) {
+	//		bid = bids[_bids[i]];
+	//		if (bid.active) {
+	//			require(localSumContrib > bid.maxValuation || localSumContrib < bid.personalMin);
+	//		} else {
+	//			require(localSumContrib <= bid.maxValuation && localSumContrib >= bid.personalMin);
+	//		}
+	//	}
+
+	//	for (i = 0; i < _bids.length; i++) {
+	//		bid = bids[_bids[i]];
+	//		bid.active = !bid.active;
+	//	}
+
+	//	sumAcceptedContrib = localSumContrib;
+	//}
 
 //	funtion pokeOut(uint[] _bids) public {
 //		uint localSumContrib = sumAcceptedContrib;
