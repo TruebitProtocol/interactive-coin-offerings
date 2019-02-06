@@ -382,7 +382,7 @@ contract IICO {
 
 		for (i = 0; i < _bids.length; i++) {
 			bid = bids[_bids[i]];
-			if (bid.active) {
+			if (!bid.active) {
 				if (localSumContrib >= bid.personalMin) {
 					bid.active = true;
 					localSumContrib += bid.contrib;
