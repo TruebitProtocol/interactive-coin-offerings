@@ -1,6 +1,6 @@
 {
   "name": "truebit-iico-beta-dev",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Interactive Coin Offerings",
   "main": "index.js",
   "directories": {
