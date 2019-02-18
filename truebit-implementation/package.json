@@ -10,7 +10,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "compile-contract": "truffle compile --all",
     "migrate-contract": "truffle migrate --network=development --reset",
-    "deploy-contract": "npm run compile-contract && npm run migrate-contract"
+    "migrate-contract-infura": "truffle migrate --network=rinkeby",
+    "deploy-contract": "npm run compile-contract && npm run migrate-contract",
+    "deploy-contract-infura": "npm run compile-contract && npm run migrate-contract-infura"
   },
   "repository": {
     "type": "git",
@@ -22,9 +24,12 @@
     "truebit"
   ],
   "license": "MIT",
-  "dependencies": {
+  "dependencies": {},
+  "devDependencies": {
+    "dotenv": "6.2.0",
     "openzeppelin-solidity": "2.0.0",
     "truffle": "4.1.14",
-    "web3": "^1.0.0-beta.37"
+    "truffle-hdwallet-provider": "1.0.4",
+    "web3-utils": "1.0.0-beta.46"
   }
 }

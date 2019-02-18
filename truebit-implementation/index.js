@@ -1,5 +1,2 @@
-import IICO from './build/contracts/IICO.json';
-
-export {
-  IICO
-};
+const IICO = require('./build/contracts/IICO.json');
+module.exports = IICO;
