@@ -29,6 +29,8 @@ contract IICO {
     uint constant HEAD = 0;            // Minimum value used for both the maxValuation and bidID of the head of the linked list.
     uint constant TAIL = uint(-1);     // Maximum value used for both the maxValuation and bidID of the tail of the linked list.
     uint constant INFINITY = uint(-2); // A value so high that a bid using it is guaranteed to succeed. Still lower than TAIL to be placed before TAIL.
+	uint constant ZERO = 0;
+	uint constant MAXMIN = uint(-1) - 1;
     // A bid to buy tokens as long as the personal maximum valuation is not exceeded.
     // Bids are in a sorted doubly linked list.
     // They are sorted in ascending order by (maxValuation,bidID) where bidID is the ID and key of the bid in the mapping.
@@ -149,8 +151,8 @@ contract IICO {
         // Make sure the two valuations are multiples of the increment
         require(now >= startTime && now < endTime); // Check that the bids are still open.
         require(_maxCap >= minValuation && _maxCap > _personalMin);
-        require( (_maxCap - minValuation) % increment == 0);
-        require( (_personalMin - minValuation) % increment == 0);
+        require( (_maxCap - minValuation) % increment == 0 || _maxCap == INFINITY);
+        require( (_personalMin - minValuation) % increment == 0 || _personalMin == MAXMIN);
 
         uint minBucketID = (_personalMin - minValuation) / increment;
         uint maxBucketID = (_maxCap - minValuation) / increment; 
@@ -343,7 +345,7 @@ contract IICO {
      */
     function () public payable {
         if (msg.value != 0 && now >= startTime && now < endTime) // Make a bid with an infinite maxValuation if some ETH was sent.
-            submitBid(INFINITY, TAIL);
+            submitBid(INFINITY, ZERO);
         else if (msg.value == 0 && finalized)                    // Else, redeem all the non redeemed bids if no ETH was sent.
             for (uint i = 0; i < contributorBidIDs[msg.sender].length; ++i)
             {
