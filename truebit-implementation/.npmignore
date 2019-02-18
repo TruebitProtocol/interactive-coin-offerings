@@ -3,3 +3,4 @@ package-lock.json
 .editorconfig
 .env
 /screenshots
+/test
