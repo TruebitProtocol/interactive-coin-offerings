@@ -117,19 +117,19 @@ contract IICO {
         numBuckets = ((maxValuation - minValuation) / increment) + 1;
         
         // Add the first and the last buckets.
-        buckets[0] = BidBucket({
-            valuation: minValuation,
-            maxCapBids: new uint[](0),
-            personalMinBids: new uint[](0),
-            creator: msg.sender
-        });
+        //buckets[0] = BidBucket({
+        //    valuation: minValuation,
+        //    maxCapBids: new uint[](0),
+        //    personalMinBids: new uint[](0),
+        //    creator: msg.sender
+        //});
 
-        buckets[uint(numBuckets-1)] = BidBucket({
-            valuation: maxValuation,
-            maxCapBids: new uint[](0),
-            personalMinBids: new uint[](0),
-            creator: msg.sender
-        });
+        //buckets[uint(numBuckets-1)] = BidBucket({
+        //    valuation: maxValuation,
+        //    maxCapBids: new uint[](0),
+        //    personalMinBids: new uint[](0),
+        //    creator: msg.sender
+        //});
     }
 
     /** @dev Set the token. Must only be called after the IICO contract receives the tokens to be sold.
@@ -151,30 +151,30 @@ contract IICO {
         // Make sure the two valuations are multiples of the increment
         require(now >= startTime && now < endTime); // Check that the bids are still open.
         require(_maxCap >= minValuation && _maxCap > _personalMin);
-        require( (_maxCap - minValuation) % increment == 0 || _maxCap == INFINITY);
-        require( (_personalMin - minValuation) % increment == 0 || _personalMin == MAXMIN);
+        //require( (_maxCap - minValuation) % increment == 0 || _maxCap == INFINITY);
+        //require( (_personalMin - minValuation) % increment == 0 || _personalMin == MAXMIN);
 
         uint minBucketID = (_personalMin - minValuation) / increment;
         uint maxBucketID = (_maxCap - minValuation) / increment; 
 
-        if (buckets[minBucketID].creator == address(0x0)) {
-            buckets[minBucketID] = BidBucket({
-                valuation: _personalMin,
-                maxCapBids: new uint[](0),
-                personalMinBids: new uint[](0),
-                creator: msg.sender
-            });
-        }
-        if (buckets[maxBucketID].creator == address(0x0)) {
-            buckets[maxBucketID] = BidBucket({
-                valuation: _maxCap,
-                maxCapBids: new uint[](0),
-                personalMinBids: new uint[](0),
-                creator: msg.sender
-            });
-        }
+        //if (buckets[minBucketID].creator == address(0x0)) {
+        //    buckets[minBucketID] = BidBucket({
+        //        valuation: _personalMin,
+        //        maxCapBids: new uint[](0),
+        //        personalMinBids: new uint[](0),
+        //        creator: msg.sender
+        //    });
+        //}
+        //if (buckets[maxBucketID].creator == address(0x0)) {
+        //    buckets[maxBucketID] = BidBucket({
+        //        valuation: _maxCap,
+        //        maxCapBids: new uint[](0),
+        //        personalMinBids: new uint[](0),
+        //        creator: msg.sender
+        //    });
+        //}
 
-        BidBucket storage bucket = buckets[maxBucketID];
+        //BidBucket storage bucket = buckets[maxBucketID];
         ++lastBidID;
 
 		// Create the bid and mark it inactive if the valuation is not within
@@ -201,8 +201,8 @@ contract IICO {
 		sumAcceptedVirtualContrib += bid.contrib + (bid.contrib * bid.bonus) / BONUS_DIVISOR;
 
 		// Place the bids in the two buckets
-        buckets[maxBucketID].maxCapBids.push(lastBidID);
-        buckets[minBucketID].personalMinBids.push(lastBidID); 
+        //buckets[maxBucketID].maxCapBids.push(lastBidID);
+        //buckets[minBucketID].personalMinBids.push(lastBidID); 
         contributorBidIDs[msg.sender].push(lastBidID);
         emit BidSubmitted(msg.sender, lastBidID, now); 
     }
@@ -477,40 +477,40 @@ contract IICO {
       * @param _bucketid The ID of the bucket to get the list from.
 	  * @return minBids The array of personal min bids in the bucket.
 	  */
-	function bucketMinBids(uint _bucketid) public view returns (uint[] memory minBids) {
-		BidBucket storage bucket = buckets[_bucketid];
-		if (bucket.creator == address(0x0)) {
-			return minBids;
-		}
+	//function bucketMinBids(uint _bucketid) public view returns (uint[] memory minBids) {
+	//	BidBucket storage bucket = buckets[_bucketid];
+	//	if (bucket.creator == address(0x0)) {
+	//		return minBids;
+	//	}
 
-		minBids = new uint[](bucket.personalMinBids.length);
-		uint i = 0;
+	//	minBids = new uint[](bucket.personalMinBids.length);
+	//	uint i = 0;
 
-		for (i = 0; i < bucket.personalMinBids.length; i++) {
-			minBids[i] = bucket.personalMinBids[i];
-		}
+	//	for (i = 0; i < bucket.personalMinBids.length; i++) {
+	//		minBids[i] = bucket.personalMinBids[i];
+	//	}
 
-		return minBids;
-	}	
+	//	return minBids;
+	//}	
 
 
 	/** @dev Get the array of maximum cap bids from a bucket.
 	  * @return maxBids The array of maximum cap bids in the bucket.
 	  */
-	function bucketMaxBids(uint _bucketid) public view returns (uint[] memory maxBids) {
-		BidBucket storage bucket = buckets[_bucketid];
-		if (bucket.creator == address(0x0)) {
-			return maxBids;
-		}
+	//function bucketMaxBids(uint _bucketid) public view returns (uint[] memory maxBids) {
+	//	BidBucket storage bucket = buckets[_bucketid];
+	//	if (bucket.creator == address(0x0)) {
+	//		return maxBids;
+	//	}
 
-		maxBids = new uint[](bucket.maxCapBids.length);
-		uint i = 0;
+	//	maxBids = new uint[](bucket.maxCapBids.length);
+	//	uint i = 0;
 
-		for (i = 0; i < bucket.maxCapBids.length; i++) {
-			maxBids[i] = bucket.maxCapBids[i];
-		}
+	//	for (i = 0; i < bucket.maxCapBids.length; i++) {
+	//		maxBids[i] = bucket.maxCapBids[i];
+	//	}
 
-		return maxBids;
-	}	
+	//	return maxBids;
+	//}	
 
 }
