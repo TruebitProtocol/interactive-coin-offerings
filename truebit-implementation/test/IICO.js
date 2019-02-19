@@ -85,11 +85,6 @@ contract('IICO', function (accounts) {
     assert.equal(await iico.sumAcceptedContrib(), 0, 'The sumAcceptedContrib is not set correctly')
     assert.equal(await iico.sumAcceptedVirtualContrib(), 0, 'The sumAcceptedVirtualContrib is not set correctly')
 
-  //assert.equal(await iico.numBuckets(), numBuckets)
-  //assert.equal(maxBucket[1], owner)
-  //assert.equal(minBucket[1], owner)
-  //assert.equal(maxBucket[0].toNumber(), maxValuation)
-  //assert.equal(minBucket[0].toNumber(), minValuation)
     })
 
   // setToken
@@ -123,12 +118,6 @@ contract('IICO', function (accounts) {
     log = tx.logs.find(log => log.event === 'BidSubmitted')
     assert.equal(log.args.contributor, buyerA)
     assert.equal(log.args.bidID, 1)
-//    console.log('LOG LOG')
-//    console.log(log)
-
-//    const test = new web3.eth.contract(iico.abi, iico.address)
-//    test.events.BidSubmitted({}, async (error, event) => { console.log(event); })
-//    iico.events.BidSubmitted({}, async (error, event) => { console.log(event); })
     
 
     let bid = await iico.bids.call(1)
@@ -141,14 +130,6 @@ contract('IICO', function (accounts) {
     assert.equal(bid[7], true)
     assert.equal(bid[8].toNumber(), 0)
     assert.equal(bid[9].toNumber(), numBuckets-1)
-    // TODO: fix the god damn min bucket valuation
-    // Check the bucket got filled
-    //let bucketMinBids = await iico.bucketMinBids(0)
-    //let bucketMaxBids = await iico.bucketMaxBids(numBuckets-1)
-    //assert.equal(bucketMinBids.length, 1)
-    //assert.equal(bucketMaxBids.length, 1)
-    //assert.equal(bucketMinBids[0].toNumber(), 1)
-    //assert.equal(bucketMaxBids[0].toNumber(), 1)
   })
 
   it('Should mark the bid inactive at submission.', async () => {
@@ -184,30 +165,7 @@ contract('IICO', function (accounts) {
 		assert.equal(bid[9].toNumber(), 2)
 		assert.equal(bid[7].false)
 		
-		//let bucket = await iico.buckets(0)
-		//assert.equal(bucket[1], owner)
-		
-		//bucket = await iico.buckets(2)
-		//assert.equal(bucket[1], buyerA)
-
   })
-
-
-//  it('Should get all the bid uints.', async () => {
-//    let startTestTime = web3.eth.getBlock('latest').timestamp
-//    let iico = await IICO.new(startTestTime+timeBeforeStart,fullBonusLength,partialWithdrawalLength, withdrawalLockUpLength,maxBonus,beneficiary, minValuation, maxValuation, increment, {from: owner})
-//    let token = await MintableToken.new({from: owner})
-//   
-//		increaseTime(1010)
-//  
-//    for (let i = 0; i < 100; i++) {
-//		  await iico.submitBid(web3.toWei(1000, 'ether'), 0, {from: buyerA, value:1000000})
-//    }
-//
-//    let result = await iico.bidBufferUint.call()  
-//    console.log(result)
-//
-//  })
 
 
   it ('Maximum cap should be accepted', async () => {
