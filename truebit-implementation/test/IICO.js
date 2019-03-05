@@ -62,6 +62,7 @@ contract('IICO', function (accounts) {
   let increment = web3.toWei(0.5, 'ether') 
   let numBuckets = 200001
   let tx, log
+  let pokeReward = 0.01E18
 
   // Constructor
   it('Should create the contract with the initial setup', async () => {
@@ -109,11 +110,11 @@ contract('IICO', function (accounts) {
     await token.mint(iico.address,160E24,{from: owner})
     await iico.setToken(token.address,{from: owner})
 
-    await expectThrow( iico.submitBid(maxValuation, 0, {from: buyerA, value:0.1E18}) )  
+    await expectThrow( iico.submitBid(maxValuation, 0, {from: buyerA, value:2E18}) )  
 
     increaseTime(1010)
 
-    tx = await iico.submitBid(maxValuation, 0, {from: buyerA, value:0.1E18})
+    tx = await iico.submitBid(maxValuation, 0, {from: buyerA, value:2E18})
   
     log = tx.logs.find(log => log.event === 'BidSubmitted')
     assert.equal(log.args.contributor, buyerA)
@@ -123,13 +124,17 @@ contract('IICO', function (accounts) {
     let bid = await iico.bids.call(1)
     assert.equal(bid[0].toNumber(), maxValuation)
     assert.equal(bid[1], 0)
-    assert.equal(bid[2], 0.1E18)
+    assert.equal(bid[2].toNumber(), 2E18 - (2*pokeReward))
     assert.equal(bid[4], buyerA)
     assert.equal(bid[5], false)
     assert.equal(bid[6], false)
     assert.equal(bid[7], true)
     assert.equal(bid[8].toNumber(), 0)
     assert.equal(bid[9].toNumber(), numBuckets-1)
+    
+    // Check poke rewards are set
+    assert.equal(bid[11].toNumber(), pokeReward)
+    assert.equal(bid[12].toNumber(), pokeReward)
   })
 
   it('Should mark the bid inactive at submission.', async () => {
@@ -189,22 +194,75 @@ contract('IICO', function (accounts) {
     increaseTime(1010)	
 
     // inactive bid
-    await iico.submitBid(web3.toWei(5, 'ether'), web3.toWei(3, 'ether'), {from: buyerA, value:web3.toWei(2, 'ether')})
+    await iico.submitBid(web3.toWei(5, 'ether'), web3.toWei(3, 'ether'), {from: buyerA, value:web3.toWei(2 + 0.02, 'ether')})
     
     let bid = await iico.bids.call(1)
     assert.equal(bid[7], false)
    
-   	await iico.submitBid(maxValuation, 0, {from: buyerB, value: web3.toWei(1, 'ether')})
+   	await iico.submitBid(maxValuation, 0, {from: buyerB, value: web3.toWei(1 + 0.02, 'ether')})
 	  bid = await iico.bids.call(2)
 	  assert.equal(bid[7], true)
 
+    oldvaluation = await iico.sumAcceptedContrib()
+
+    // Save buyerC current balance
+    old_balance = await web3.eth.getBalance(buyerC)
+
     tx = await iico.pokeIn([1], {from: buyerC})
+    console.log(tx.receipt.cumulativeGasUsed, web3.eth.gasPrice * tx.receipt.cumulativeGasUsed)
     log = tx.logs.find(log => log.event == 'PokeIn')
     assert.equal(log.args.poker, buyerC)
     assert.equal(log.args.bidID, 1)
+
+    // Check the poke reward was distributed
+    new_balance = await web3.eth.getBalance(buyerC)
+    gasprice = await web3.eth.gasPrice.toNumber()
+    assert(old_balance >= (new_balance - pokeReward))
+    gasprice = await web3.eth.gasPrice
+
+    // Check sale valuation
+    newvaluation = await iico.sumAcceptedContrib()
+    assert.equal(newvaluation - oldvaluation, 2E18)
   })
     
 
+  it ('Active bid should be poked out', async () => {
+    let startTestTime = web3.eth.getBlock('latest').timestamp
+    let iico = await IICO.new(startTestTime+timeBeforeStart,fullBonusLength,partialWithdrawalLength, withdrawalLockUpLength,maxBonus,beneficiary, minValuation, maxValuation, increment, {from: owner})
+    let token = await MintableToken.new({from: owner})
+	
+    increaseTime(1010)	
+
+    // inactive bid
+    await iico.submitBid(web3.toWei(5, 'ether'), web3.toWei(0, 'ether'), {from: buyerA, value:web3.toWei(2 + 0.02, 'ether')})
+    
+    let bid = await iico.bids.call(1)
+    assert.equal(bid[7], true)
+   
+   	await iico.submitBid(maxValuation, 0, {from: buyerB, value: web3.toWei(5 + 0.02, 'ether')})
+	  bid = await iico.bids.call(2)
+	  assert.equal(bid[7], true)
+
+    oldvaluation = await iico.sumAcceptedContrib()
+
+    // Save buyerC current balance
+    old_balance = await web3.eth.getBalance(buyerC)
+
+    tx = await iico.pokeOut([1], {from: buyerC})
+    log = tx.logs.find(log => log.event == 'PokeOut')
+    assert.equal(log.args.poker, buyerC)
+    assert.equal(log.args.bidID, 1)
+
+    // Check the poke reward was distributed
+    new_balance = await web3.eth.getBalance(buyerC)
+    gasprice = await web3.eth.gasPrice.toNumber()
+    assert(new_balance > old_balance)
+
+    // Check sale valuation
+    newvaluation = await iico.sumAcceptedContrib()
+    assert.equal(oldvaluation - newvaluation, 2E18)
+  })
+    
 //  it ('Inactive bid should be poked in', async () => {
 //    let startTestTime = web3.eth.getBlock('latest').timestamp
 //    let iico = await IICO.new(startTestTime+timeBeforeStart,fullBonusLength,partialWithdrawalLength, withdrawalLockUpLength,maxBonus,beneficiary, minValuation, maxValuation, increment, {from: owner})

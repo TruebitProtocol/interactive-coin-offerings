@@ -49,7 +49,8 @@ contract IICO {
 		uint minBucketID;
 		uint maxBucketID;
 		uint creationBlock;
-
+		uint pokeOutReward;
+		uint pokeInReward;
     }
 
     struct BidBucket {
@@ -77,7 +78,7 @@ contract IICO {
     uint public increment;
     uint public numBuckets;
     uint constant BONUS_DIVISOR = 1E9;          // The quantity we need to divide by to normalize the bonus.
-	uint public constant pokeReward = 200;
+	uint public constant pokeReward = 0.01 ether;
 
     /* *** Finalization variables *** */
     bool public finalized;                 // True when the cutting bid has been found. The following variables are final only after finalized==true.
@@ -115,21 +116,6 @@ contract IICO {
         minValuation = _minValuation;
         increment = _increment;
         numBuckets = ((maxValuation - minValuation) / increment) + 1;
-        
-        // Add the first and the last buckets.
-        //buckets[0] = BidBucket({
-        //    valuation: minValuation,
-        //    maxCapBids: new uint[](0),
-        //    personalMinBids: new uint[](0),
-        //    creator: msg.sender
-        //});
-
-        //buckets[uint(numBuckets-1)] = BidBucket({
-        //    valuation: maxValuation,
-        //    maxCapBids: new uint[](0),
-        //    personalMinBids: new uint[](0),
-        //    creator: msg.sender
-        //});
     }
 
     /** @dev Set the token. Must only be called after the IICO contract receives the tokens to be sold.
@@ -151,30 +137,12 @@ contract IICO {
         // Make sure the two valuations are multiples of the increment
         require(now >= startTime && now < endTime); // Check that the bids are still open.
         require(_maxCap >= minValuation && _maxCap > _personalMin);
-        //require( (_maxCap - minValuation) % increment == 0 || _maxCap == INFINITY);
-        //require( (_personalMin - minValuation) % increment == 0 || _personalMin == MAXMIN);
+		require( msg.value > (pokeReward + pokeReward));
 
         uint minBucketID = (_personalMin - minValuation) / increment;
         uint maxBucketID = (_maxCap - minValuation) / increment; 
-
-        //if (buckets[minBucketID].creator == address(0x0)) {
-        //    buckets[minBucketID] = BidBucket({
-        //        valuation: _personalMin,
-        //        maxCapBids: new uint[](0),
-        //        personalMinBids: new uint[](0),
-        //        creator: msg.sender
-        //    });
-        //}
-        //if (buckets[maxBucketID].creator == address(0x0)) {
-        //    buckets[maxBucketID] = BidBucket({
-        //        valuation: _maxCap,
-        //        maxCapBids: new uint[](0),
-        //        personalMinBids: new uint[](0),
-        //        creator: msg.sender
-        //    });
-        //}
-
-        //BidBucket storage bucket = buckets[maxBucketID];
+		uint realContrib = msg.value - (pokeReward + pokeReward);
+	
         ++lastBidID;
 
 		// Create the bid and mark it inactive if the valuation is not within
@@ -183,15 +151,17 @@ contract IICO {
         bids[lastBidID] = Bid({
             maxValuation: _maxCap,
             personalMin: _personalMin,
-            contrib: msg.value,
+            contrib: realContrib,
             bonus: bonus(),
             contributor: msg.sender,
             withdrawn: false,
             redeemed: false,
 			minBucketID: minBucketID,
 			maxBucketID: maxBucketID,
-			active: (sumAcceptedContrib+msg.value > _maxCap || sumAcceptedContrib+msg.value < _personalMin) ? false: true,
-			creationBlock: block.number
+			active: (sumAcceptedContrib+realContrib > _maxCap || sumAcceptedContrib+realContrib < _personalMin) ? false: true,
+			creationBlock: block.number,
+			pokeOutReward: pokeReward,
+			pokeInReward: pokeReward
         });
 
 		Bid storage bid = bids[lastBidID];
@@ -201,30 +171,10 @@ contract IICO {
 		sumAcceptedVirtualContrib += bid.contrib + (bid.contrib * bid.bonus) / BONUS_DIVISOR;
 
 		// Place the bids in the two buckets
-        //buckets[maxBucketID].maxCapBids.push(lastBidID);
-        //buckets[minBucketID].personalMinBids.push(lastBidID); 
         contributorBidIDs[msg.sender].push(lastBidID);
         emit BidSubmitted(msg.sender, lastBidID, now); 
     }
 
-
-//	function bidBuffer() public constant
-//		returns (uint[], uint[], uint[], uint[], address[],
-//				 bool[], bool[], bool[], uint[])
-//	{
-//		uint[] memory _maxval = new uint[](lastBidID);
-//		uint[] memory _pmin = new uint[](lastBidID);
-//		uint[] memory _contrib = new uint[](lastBidID);
-//		uint[] memory _bonus = new uint[](lastBidID);
-//		address[] memory _addr = new address[](lastBidID);
-//		bool[] memory _with = new bool[](lastBidID);
-//		bool[] memory _red = new bool[](lastBidID);
-//		bool[] memory _active = new bool[](lastBidID);
-//		uint[] memory _block = new uint[](lastBidID);
-//
-//		return (_maxval, _pmin, _contrib, _bonus, _addr, _with, _red, _active, _block);
-//	
-//	}
 
 	function bidBufferUint() public constant
 		returns (uint[], uint[], uint[], uint[], uint[])
@@ -368,6 +318,10 @@ contract IICO {
 				if (localSumContrib > bid.maxValuation) {
 					bid.active = false;
 					localSumContrib -= bid.contrib;
+					if (bid.pokeOutReward != 0) {
+						msg.sender.transfer(bid.pokeOutReward);
+						bid.pokeOutReward = 0;
+					}
 					emit PokeOut(msg.sender, _bids[i]);
 				}
 			}
@@ -388,6 +342,10 @@ contract IICO {
 				if (localSumContrib >= bid.personalMin) {
 					bid.active = true;
 					localSumContrib += bid.contrib;
+					if (bid.pokeInReward != 0) {
+						msg.sender.transfer(bid.pokeInReward);
+						bid.pokeInReward = 0;
+					}
 					emit PokeIn(msg.sender, _bids[i]);
 				}
 			}
@@ -395,55 +353,6 @@ contract IICO {
 
 		sumAcceptedContrib = localSumContrib;
 	}
-
-
-	/** @dev Poke a bid. Checks if the bid should be make active or inactive.
-	  * @param _bids ID of the bid to poke.
-      */
-	//function poke(uint[] _bids) public {
-	//	uint localSumContrib = sumAcceptedContrib;
-	//	uint localVSumContrib = sumAcceptedVirtualContrib;
-	//	uint256 i = 0;
-	//	Bid storage bid = bids[0];
-
-	//	for (i = 0; i < _bids.length; i++) {
-	//		bid = bids[_bids[i]];						
-	//		if (bid.active) {
-	//			localSumContrib -= bid.contrib;
-	//		} else {
-	//			localSumContrib += bid.contrib;
-	//		}
-	//	}
-
-	//	for (i = 0; i < _bids.length; i++) {
-	//		bid = bids[_bids[i]];
-	//		if (bid.active) {
-	//			require(localSumContrib > bid.maxValuation || localSumContrib < bid.personalMin);
-	//		} else {
-	//			require(localSumContrib <= bid.maxValuation && localSumContrib >= bid.personalMin);
-	//		}
-	//	}
-
-	//	for (i = 0; i < _bids.length; i++) {
-	//		bid = bids[_bids[i]];
-	//		bid.active = !bid.active;
-	//	}
-
-	//	sumAcceptedContrib = localSumContrib;
-	//}
-
-//	funtion pokeOut(uint[] _bids) public {
-//		uint localSumContrib = sumAcceptedContrib;
-//		uint localVSumContrib = sumAcceptedVirtualContrib;
-//		uint i = 0;
-//		Bid storage bid = bids[0];
-//
-//		for (i = 0; i < _bids.length; i++) {
-//			bid = bids[_bids[i]];
-//			if (bid.active) {
-//					if (
-//		}	
-	
 
     /* *** View Functions *** */
 
@@ -470,47 +379,5 @@ contract IICO {
         for (uint i = 0; i < contributorBidIDs[_contributor].length; ++i)
             contribution += bids[contributorBidIDs[_contributor][i]].contrib;
     }
-
-
-	/** @dev Get the array of personal min bids from a bucket.
-	  *	This can be used for getting data for visualization.
-      * @param _bucketid The ID of the bucket to get the list from.
-	  * @return minBids The array of personal min bids in the bucket.
-	  */
-	//function bucketMinBids(uint _bucketid) public view returns (uint[] memory minBids) {
-	//	BidBucket storage bucket = buckets[_bucketid];
-	//	if (bucket.creator == address(0x0)) {
-	//		return minBids;
-	//	}
-
-	//	minBids = new uint[](bucket.personalMinBids.length);
-	//	uint i = 0;
-
-	//	for (i = 0; i < bucket.personalMinBids.length; i++) {
-	//		minBids[i] = bucket.personalMinBids[i];
-	//	}
-
-	//	return minBids;
-	//}	
-
-
-	/** @dev Get the array of maximum cap bids from a bucket.
-	  * @return maxBids The array of maximum cap bids in the bucket.
-	  */
-	//function bucketMaxBids(uint _bucketid) public view returns (uint[] memory maxBids) {
-	//	BidBucket storage bucket = buckets[_bucketid];
-	//	if (bucket.creator == address(0x0)) {
-	//		return maxBids;
-	//	}
-
-	//	maxBids = new uint[](bucket.maxCapBids.length);
-	//	uint i = 0;
-
-	//	for (i = 0; i < bucket.maxCapBids.length; i++) {
-	//		maxBids[i] = bucket.maxCapBids[i];
-	//	}
-
-	//	return maxBids;
-	//}	
 
 }
