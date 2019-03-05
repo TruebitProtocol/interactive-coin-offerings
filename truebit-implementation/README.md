@@ -26,3 +26,5 @@
 ```js
 import { IICO, IICOABI } from 'truebit-iico-beta-dev';
 ```
+
+- **Breaking Changes:** starting in version `2.0.0` you can only import the `IICOABI`
