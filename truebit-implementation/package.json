@@ -1,6 +1,6 @@
 {
   "name": "truebit-iico-beta-dev",
-  "version": "0.0.12",
+  "version": "1.0.0",
   "description": "Interactive Coin Offerings",
   "main": "index.js",
   "directories": {
@@ -8,11 +8,12 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "compile-contract": "truffle compile --all",
+    "compile-contract": "truffle compile --all && npm run export-abi",
     "migrate-contract": "truffle migrate --network=development --reset",
     "migrate-contract-infura": "truffle migrate --network=rinkeby",
     "deploy-contract": "npm run compile-contract && npm run migrate-contract",
-    "deploy-contract-infura": "npm run compile-contract && npm run migrate-contract-infura"
+    "deploy-contract-infura": "npm run compile-contract && npm run migrate-contract-infura",
+    "export-abi": "node export-abi.js"
   },
   "repository": {
     "type": "git",

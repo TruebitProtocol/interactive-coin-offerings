@@ -18,3 +18,11 @@
 **Notes:** 
 - Rember to whitelist the contract address in the infura dashboard in order to use it
 - Please do not commit/push changes in the `.env` file to this repository
+
+### Changelog
+
+- **Breaking Changes:** starting in version `1.0.0` you should import the `IICO` and `IICOABI` like:
+
+```js
+import { IICO, IICOABI } from 'truebit-iico-beta-dev';
+```

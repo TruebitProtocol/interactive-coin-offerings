@@ -1,2 +1,6 @@
 const IICO = require('./build/contracts/IICO.json');
-module.exports = IICO;
+const IICOABI = require('./build/IICO.abi.json');
+module.exports = {
+  IICO,
+  IICOABI
+};
