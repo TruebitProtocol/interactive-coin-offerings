@@ -326,19 +326,6 @@ contract IICO {
 				}
 				emit PokeOut(msg.sender, _bids[i]);
 			}
-
-	
-			//if (bid.active) {
-			//	if (localSumContrib > bid.maxValuation) {
-			//		bid.active = false;
-			//		localSumContrib -= bid.contrib;
-			//		if (bid.pokeOutReward != 0) {
-			//			msg.sender.transfer(bid.pokeOutReward);
-			//			bid.pokeOutReward = 0;
-			//		}
-			//		emit PokeOut(msg.sender, _bids[i]);
-			//	}
-			//}
 		}
 
 		sumAcceptedContrib = localSumContrib;
@@ -364,17 +351,6 @@ contract IICO {
 				emit PokeIn(msg.sender, _bids[i]);
 			}
 
-			//if (!bid.active) {
-			//	if (localSumContrib >= bid.personalMin) {
-			//		bid.active = true;
-			//		localSumContrib += bid.contrib;
-			//		if (bid.pokeInReward != 0) {
-			//			msg.sender.transfer(bid.pokeInReward);
-			//			bid.pokeInReward = 0;
-			//		}
-			//		emit PokeIn(msg.sender, _bids[i]);
-			//	}
-			//}
 		}
 
 		sumAcceptedContrib = localSumContrib;
