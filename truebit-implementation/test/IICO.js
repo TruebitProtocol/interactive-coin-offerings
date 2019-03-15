@@ -142,11 +142,14 @@ contract('IICO', function (accounts) {
     let iico = await IICO.new(startTestTime+timeBeforeStart,fullBonusLength,partialWithdrawalLength, withdrawalLockUpLength,maxBonus,beneficiary, minValuation, maxValuation, increment, {from: owner})
     let token = await MintableToken.new({from: owner})
     increaseTime(1010)
- 
+
 		await iico.submitBid(web3.toWei(1, 'ether'), 0, {from: buyerA, value:web3.toWei(2, 'ether')})
 
 		let bid = await iico.bids.call(1)
 		assert.equal(bid[7], false)
+
+    let valuation = await iico.sumAcceptedContrib.call()
+    assert.equal(valuation.toNumber(), 0)
 
 		await iico.submitBid(web3.toWei(100, 'ether'), web3.toWei(50, 'ether'), {from: buyerB, value: web3.toWei(1, 'ether')})
 
@@ -223,6 +226,19 @@ contract('IICO', function (accounts) {
     // Check sale valuation
     newvaluation = await iico.sumAcceptedContrib()
     assert.equal(newvaluation - oldvaluation, 2E18)
+  })
+
+  it ('Estimate bad gas.', async () => {
+    let startTestTime = web3.eth.getBlock('latest').timestamp
+    let iico = await IICO.new(startTestTime+timeBeforeStart,fullBonusLength,partialWithdrawalLength, withdrawalLockUpLength,maxBonus,beneficiary, minValuation, maxValuation, increment, {from: owner})
+    let token = await MintableToken.new({from: owner})
+	
+    increaseTime(1010)	
+    
+    let gas_amount = await iico.submitBid.estimateGas(web3.toWei(10, 'ether'), web3.toWei(1, 'ether'), {from: buyerA, value:web3.toWei(5 + 0.02, 'ether')})
+
+    console.log('gas', gas_amount)
+     
   })
     
 
@@ -388,6 +404,7 @@ contract('IICO', function (accounts) {
 //    console.log(result)
 //
 //  })
+
 })
 
 
