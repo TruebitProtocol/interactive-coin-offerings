@@ -1,0 +1,22 @@
+name: Backup
+on:
+  workflow_dispatch:
+    branches:
+      - master
+      
+  schedule:
+    - cron:  '0 09 1 * *'
+      
+jobs:
+  s3Backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: S3 Backup
+        uses: peter-evans/s3-backup@v1
+        env:
+          ACCESS_KEY_ID: ${{ secrets.S3_BACKUP_ACCESS_KEY_ID }}
+          MIRROR_TARGET: ${{ secrets.S3_BACKUP_MIRROR_TARGET }}
+          SECRET_ACCESS_KEY: ${{ secrets.S3_BACKUP_SECRET_ACCESS_KEY }}
+        with:
+          args: --overwrite --remove
